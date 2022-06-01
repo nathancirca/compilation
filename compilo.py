@@ -62,6 +62,32 @@ def var_list(ast):
         s.update(var_list(c))
     return s
 
+def type(expr):
+    if expr.data =="variable":
+        return f"[{expr.children[0].value}]"
+    elif expr.data == "nombre":
+        return "0"
+    elif expr.data=="pointer":
+        return "1"
+    elif expr.data=="string":
+        return "2"
+    elif expr.data == "binexpr":
+        t1=type(expr.children[0])
+        t2=type(expr.children[2])
+        if t1 == t2:
+            return t1
+        elif expr.children[1]=="+":
+            if (t1 == "1" and t2 == "0") or (t1 == "0" and t2 == "1"):
+                return "1"
+            if (t1 == "2" and t2 == "0") or (t1 == "0" and t2 == "2"):
+                return "2"
+            if (t1 == "2" and t2 == "1") or (t1 == "1" and t2 == "2"):
+                return "2"
+    elif expr.data == "parenexpr":
+        return type(expr.chidlren[0])
+    else :
+        raise Exception("Not implemented")
+
 def compile_expr(expr):
     if expr.data == "variable":
         return f"mov rax, [{expr.children[0].value}]"
@@ -71,7 +97,7 @@ def compile_expr(expr):
         e1 = compile_expr(expr.children[0])
         e2 = compile_expr(expr.children[2])
         if expr.children[1] == "+":
-            return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\nadd rax, rbx"
+            return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\ncmp {type(e1)} {type(e2)}\nje sol1\nsol1: add rax, rbx\njmp fin\ncmp {type(e1)} 0\nje i1\ni1: cmp {type(e2)} 1\nje i+p\njne i+s\ncmp {type(e1)} 1\nje p1\np1: cmp {type(e2)} 0\nje i+p\njne p+s\ncmp {type(e1)} 2\nje s1\ns1: cmp {type(e2)} 0\nje i+s\njne p+s\ncmp {type(e2)} 0\nje i2\ni2: cmp {type(e1)} 1\nje i+p\njne i+s\ncmp {type(e2)} 1\nje p2\np2: cmp {type(e1)} 0\nje i+p\njne p+s\ncmp {type(e2)} 2\nje s2\ns2: cmp {type(e1)} 0\nje i+s\njne p+s\ni+p:\njmp fin\ni+s: \njmp fin\np+s: \njmp fin\nfin:"
         elif expr.children[1] == "-":
             return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\nsub rax, rbx"
         elif expr.children[1] == "*":
@@ -97,7 +123,7 @@ def type_assign(expr,lhs):
     elif expr.data == "binexpr":
         
     elif expr.data == "parenexpr":
-        return type(expr.chidlren[0])
+        return type_assign(expr.chidlren[0])
     else :
         raise Exception("Not implemented")
 
@@ -106,7 +132,7 @@ def compile_cmd(cmd):
         lhs = cmd.children[0].value
         expr = cmd.children[1]
         rhs = compile_expr(expr)
-        return f"{rhs}\n{type(expr,lhs)}\nmov [{lhs}],rax"
+        return f"{rhs}\n{type_assign(expr,lhs)}\nmov [{lhs}],rax"
     elif cmd.data == "while":
         e = compile_expr(cmd.children[0])
         b = compile_bloc(cmd.children[1])
