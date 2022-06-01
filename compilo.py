@@ -70,18 +70,43 @@ def compile_expr(expr):
     elif expr.data == "binexpr":
         e1 = compile_expr(expr.children[0])
         e2 = compile_expr(expr.children[2])
-        op = expr.children[1].value
-        return f"{e2}\npush rax\n{e1}\npop rbx\nadd rax,rbx"
+        if expr.children[1] == "+":
+            return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\nadd rax, rbx"
+        elif expr.children[1] == "-":
+            return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\nsub rax, rbx"
+        elif expr.children[1] == "*":
+            return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\nimul rax, rbx"
+        elif expr.children[1] == "/":
+            return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\ndiv rax, rbx"
+        else:
+            raise Exception("Binexp Not implemented")
     elif expr.data == "parenexpr":
         return compile_expr(expr.children[0])
+    else :
+        raise Exception("Not implemented")
+
+def type_assign(expr,lhs):
+    if expr.data == "variable":
+        return f"mov [{lhs}_type] [{expr.children[0].value}_type]"
+    elif expr.data=="nombre":
+        return f"mov [{lhs}_type] 0"
+    elif expr.data=="pointer":
+        return f"mov [{lhs}_type] 1"
+    elif expr.data=="string":
+        return f"mov [{lhs}_type] 2"
+    elif expr.data == "binexpr":
+        
+    elif expr.data == "parenexpr":
+        return type(expr.chidlren[0])
     else :
         raise Exception("Not implemented")
 
 def compile_cmd(cmd):
     if cmd.data == "assignment":
         lhs = cmd.children[0].value
-        rhs = compile_expr(cmd.children[1])
-        return f"{rhs}\nmov [{lhs}],rax"
+        expr = cmd.children[1]
+        rhs = compile_expr(expr)
+        return f"{rhs}\n{type(expr,lhs)}\nmov [{lhs}],rax"
     elif cmd.data == "while":
         e = compile_expr(cmd.children[0])
         b = compile_bloc(cmd.children[1])
@@ -101,7 +126,7 @@ def compile_vars(ast):
 def compile(prg):
     with open("moule.asm") as f:
         code = f.read()
-        var_decl = "\n".join([f"{x}: dq 0" for x in var_list(prg)])
+        var_decl = "\n".join([f"{x}: dq 0\n{x}_type: dq 0" for x in var_list(prg)])
         code = code.replace("VAR_DECL", var_decl)
         code = code.replace("RETURN",compile_expr(prg.children[2]))
         code = code.replace("BODY", compile_bloc(prg.children[1]))
