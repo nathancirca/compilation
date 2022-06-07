@@ -64,7 +64,7 @@ def var_list(ast):
 
 def type(expr):
     if expr.data =="variable":
-        return f"[{expr.children[0].value}]"
+        return f"[{expr.children[0].value}_type]"
     elif expr.data == "nombre":
         return "0"
     elif expr.data=="pointer":
@@ -76,13 +76,11 @@ def type(expr):
         t2=type(expr.children[2])
         if t1 == t2:
             return t1
-        elif expr.children[1]=="+":
-            if (t1 == "1" and t2 == "0") or (t1 == "0" and t2 == "1"):
+        elif expr.children[1]=="+" or expr.children[1]=="*":
+            if (t1 == "2" or t2 == "2"):
+                return "2"
+            else:
                 return "1"
-            if (t1 == "2" and t2 == "0") or (t1 == "0" and t2 == "2"):
-                return "2"
-            if (t1 == "2" and t2 == "1") or (t1 == "1" and t2 == "2"):
-                return "2"
     elif expr.data == "parenexpr":
         return type(expr.chidlren[0])
     else :
@@ -96,14 +94,43 @@ def compile_expr(expr):
     elif expr.data == "binexpr":
         e1 = compile_expr(expr.children[0])
         e2 = compile_expr(expr.children[2])
+        t1=type(expr.children[0])
+        t2=type(expr.children[2])
         if expr.children[1] == "+":
-            return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\ncmp {type(e1)} {type(e2)}\nje sol1\nsol1: add rax, rbx\njmp fin\ncmp {type(e1)} 0\nje i1\ni1: cmp {type(e2)} 1\nje i+p\njne i+s\ncmp {type(e1)} 1\nje p1\np1: cmp {type(e2)} 0\nje i+p\njne p+s\ncmp {type(e1)} 2\nje s1\ns1: cmp {type(e2)} 0\nje i+s\njne p+s\ncmp {type(e2)} 0\nje i2\ni2: cmp {type(e1)} 1\nje i+p\njne i+s\ncmp {type(e2)} 1\nje p2\np2: cmp {type(e1)} 0\nje i+p\njne p+s\ncmp {type(e2)} 2\nje s2\ns2: cmp {type(e1)} 0\nje i+s\njne p+s\ni+p:\njmp fin\ni+s: \njmp fin\np+s: \njmp fin\nfin:"
+            if t1==0 and t2==0:
+                return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\nadd rax, rbx"
+            elif (t1==0 and t2==1) or (t1==1 and t2==0):
+                return #add int ot a pointer
+            elif (t1==0 and t2==2) or (t1==2 and t2==0):
+                return #add the int in the string
+            elif (t1==1 and t2==2) or (t1==2 and t2==1):
+                return #add the content of the pointer in the string
+            elif t1==1 and t2==1:
+                return #add pointers
+            else:
+                return #add strings
+            #return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\ncmp {type(e1)} {type(e2)}\nje sol1\nsol1: add rax, rbx\njmp fin\ncmp {type(e1)} 0\nje i1\ni1: cmp {type(e2)} 1\nje i+p\njne i+s\ncmp {type(e1)} 1\nje p1\np1: cmp {type(e2)} 0\nje i+p\njne p+s\ncmp {type(e1)} 2\nje s1\ns1: cmp {type(e2)} 0\nje i+s\njne p+s\ncmp {type(e2)} 0\nje i2\ni2: cmp {type(e1)} 1\nje i+p\njne i+s\ncmp {type(e2)} 1\nje p2\np2: cmp {type(e1)} 0\nje i+p\njne p+s\ncmp {type(e2)} 2\nje s2\ns2: cmp {type(e1)} 0\nje i+s\njne p+s\ni+p:\njmp fin\ni+s: \njmp fin\np+s: \njmp fin\nfin:"
         elif expr.children[1] == "-":
-            return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\nsub rax, rbx"
+            if t1==0 and t2==0:
+                return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\nsub rax, rbx"
+            elif t1==1 and t2==1:
+                return #sub pointers
+            else:
+                raise Exception("incompatible types for this operation")
         elif expr.children[1] == "*":
-            return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\nimul rax, rbx"
+            if (t1=="1" and t2=="0") or (t1=="0" and t2=="1"):
+                return #mul entier pointeur
+            elif (t1=="2" and t2=="0") or (t1=="0" and t2=="2"):
+                return #mul entier string
+            elif t1==0 and t2==0:
+                return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\nimul rax, rbx"
+            else:
+                raise Exception("incompatible types for this operation")
         elif expr.children[1] == "/":
-            return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\ndiv rax, rbx"
+            if t1==0 and t2==0:
+                return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\ndiv rax, rbx"
+            else:
+                raise Exception("incompatible types for this operation")
         else:
             raise Exception("Binexp Not implemented")
     elif expr.data == "parenexpr":
@@ -121,7 +148,15 @@ def type_assign(expr,lhs):
     elif expr.data=="string":
         return f"mov [{lhs}_type] 2"
     elif expr.data == "binexpr":
-        
+        t1 = type_assign(expr.children[0])
+        t2 = type_assign(expr.children[2])
+        if expr.children[1] == "+":
+            if (t1=="2" or t2=="2"):
+                return f"mov [{lhs}_type] 2"
+            elif (t1=="1" or t2=="1"):
+                return f"mov [{lhs}_type] 1"
+            else :
+                return f"mov [{lhs}_type] 0"
     elif expr.data == "parenexpr":
         return type_assign(expr.chidlren[0])
     else :
@@ -135,9 +170,15 @@ def compile_cmd(cmd):
         return f"{rhs}\n{type_assign(expr,lhs)}\nmov [{lhs}],rax"
     elif cmd.data == "while":
         e = compile_expr(cmd.children[0])
+        te=type(cmd.children[0])
         b = compile_bloc(cmd.children[1])
         index=next(cpt)
-        return f"debut{index}:{e}\ncmp rax,0\njz fin{index}\n{b}\njmp debut{index}\nfin{index}:\n"
+        if te==0:
+            return f"debut{index}:{e}\ncmp rax,0\njz fin{index}\n{b}\njmp debut{index}\nfin{index}:\n"
+        if te==1:#regarde si l'adresse est vide
+            return f"debut{index}:{e}\ncmp rax,\njz fin{index}\n{b}\njmp debut{index}\nfin{index}:\n"
+        else:#regarde si le string est vide
+            return f"debut{index}:{e}\ncmp rax,\njz fin{index}\n{b}\njmp debut{index}\nfin{index}:\n"
     else :
         raise Exception("Not implemented")
 def compile_bloc(bloc):
