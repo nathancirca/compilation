@@ -9,11 +9,13 @@ prog : "main" "(" variables ")" "{" bloc "return" "(" expr ")" ";" "}"
 NUMBER : /[0-9]+/
 OP : /[-+\*>]/
 IDENTIFIANT : /[a-zA-Z][a-zA-Z0-9]*/
+CHAR : /["][a-zA-Z0-9]*["]/
 %import common.WS
 %ignore WS
 """, start = "prog")
 
 cpt =iter(range(10000))
+compteur=0
 
 def pp_variables(vars):
     return ", ".join([t.value for t in vars.children])
@@ -87,10 +89,18 @@ def type(expr):
         raise Exception("Not implemented")
 
 def compile_expr(expr):
+    global compteur
     if expr.data == "variable":
         return f"mov rax, [{expr.children[0].value}]"
     elif expr.data == "nombre":
         return f"mov rax,{expr.children[0].value}"
+    elif expr.data == "chaine":
+        print(expr.children[0].value)
+        e = '0x'
+        for i in expr.children[0].value:
+            if ord(i) != 34:
+                e+=f"{ord(i)}"
+        return f"movabs rax, [{e}]"
     elif expr.data == "binexpr":
         e1 = compile_expr(expr.children[0])
         e2 = compile_expr(expr.children[2])
@@ -102,14 +112,52 @@ def compile_expr(expr):
             elif (t1==0 and t2==1) or (t1==1 and t2==0):
                 return #add int ot a pointer
             elif (t1==0 and t2==2) or (t1==2 and t2==0):
-                return #add the int in the string
+                if (t1==0):
+                    e1 = expr.children[0].value
+                    e2 = expr.children[2].value
+                    long1 = len(str(expr.children[0].value))
+                    long2 = len(expr.children[2].value)
+                    lenconcat = long1+long2
+                    compteur+=4
+                    return f"""lea rcx, {e1}\nmov ebx, {e1}\mov edx, 8\nmov rsi, rcx\nmov edi, ebx\nmov ebx, 0\ncall itoa\mov edx, {long1}\nmov ebx, {long2}\nadd edx, ebx\nmovsx rdx, ebx\nsub rdx, 1\nmov len_concat, rdx\nmovsx rdx, ebx\nmov r10, rdx\nmov r11d, 0
+                    \nmovsx rdx, ebx\nmov r8, rdx\nmov e9d, 0\ncdqe\nmov edx, 16\nsub rdx, 1\nadd rbx, rdx\nmov esi, 16\nmov edx, 0\ndiv rsi
+                    \nimul rbx, rbx, 16\nsub rsp, rbx\nmov rbx, rsp\nadd rbx, 0\nmov rax, rbx\nmov i, 0\njmp debut{compteur-3}
+                    \ndebut{compteur-3}:\nmov ebx, rax\ncmp eax, len_concat\njl debut{compteur}\nmov rsp rsi\nfin{compteur-3}
+                    \ndebut{compteur-2}:\nmov ebx, rax\ncdqe\nmovzx ecx, [{e2}+rbx]\nmov rdx, rax\nmov eax, i\ncdqe\nmov [rdx+rbx], cl\nfin{compteur-2}
+                    \ndebut{compteur-1}:\nadd i, 1\nfin{compteur-1}
+                    \ndebut{compteur}:\nmov eax, i\ncdque\ncmp rbx, 6\nja debut{compteur-2}\nmov ebx, i\ncdqe\nmovzx ecx, [{str(e1)}+rbx]\nmov rdx, rax\nmov eax, i\ncdqe\nmov rdx+rbx, cl\njmp debut{compteur-1}\nfin{compteur}"""
+                else:
+                    e1 = expr.children[0].value
+                    e2 = expr.children[2].value
+                    long1 = len(e1)
+                    long2 = len(str(e2))
+                    lenconcat = long1+long2
+                    compteur+=4
+                    return f"""lea rcx, {e1}\nmov ebx, {e1}\mov edx, 8\nmov rsi, rcx\nmov edi, ebx\nmov ebx, 0\ncall itoa\mov edx, {long1}\nmov ebx, {long2}\nadd edx, ebx\nmovsx rdx, ebx\nsub rdx, 1\nmov len_concat, rdx\nmovsx rdx, ebx\nmov r10, rdx\nmov r11d, 0
+                    \nmovsx rdx, ebx\nmov r8, rdx\nmov e9d, 0\ncdqe\nmov edx, 16\nsub rdx, 1\nadd rbx, rdx\nmov esi, 16\nmov edx, 0\ndiv rsi
+                    \nimul rbx, rbx, 16\nsub rsp, rbx\nmov rbx, rsp\nadd rbx, 0\nmov rax, rbx\nmov i, 0\njmp debut{compteur-3}
+                    \ndebut{compteur-3}:\nmov ebx, rax\ncmp eax, len_concat\njl debut{compteur}\nmov rsp rsi\nfin{compteur-3}
+                    \ndebut{compteur-2}:\nmov ebx, rax\ncdqe\nmovzx ecx, [{str(e2)}+rbx]\nmov rdx, rax\nmov eax, i\ncdqe\nmov [rdx+rbx], cl\nfin{compteur-2}
+                    \ndebut{compteur-1}:\nadd i, 1\nfin{compteur-1}
+                    \ndebut{compteur}:\nmov eax, i\ncdque\ncmp rbx, 6\nja debut{compteur-2}\nmov ebx, i\ncdqe\nmovzx ecx, [{e1}+rbx]\nmov rdx, rax\nmov eax, i\ncdqe\nmov rdx+rbx, cl\njmp debut{compteur-1}\nfin{compteur}"""
             elif (t1==1 and t2==2) or (t1==2 and t2==1):
                 return #add the content of the pointer in the string
             elif t1==1 and t2==1:
                 return #add pointers
             else:
-                return #add strings
-            #return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\ncmp {type(e1)} {type(e2)}\nje sol1\nsol1: add rax, rbx\njmp fin\ncmp {type(e1)} 0\nje i1\ni1: cmp {type(e2)} 1\nje i+p\njne i+s\ncmp {type(e1)} 1\nje p1\np1: cmp {type(e2)} 0\nje i+p\njne p+s\ncmp {type(e1)} 2\nje s1\ns1: cmp {type(e2)} 0\nje i+s\njne p+s\ncmp {type(e2)} 0\nje i2\ni2: cmp {type(e1)} 1\nje i+p\njne i+s\ncmp {type(e2)} 1\nje p2\np2: cmp {type(e1)} 0\nje i+p\njne p+s\ncmp {type(e2)} 2\nje s2\ns2: cmp {type(e1)} 0\nje i+s\njne p+s\ni+p:\njmp fin\ni+s: \njmp fin\np+s: \njmp fin\nfin:"
+                e1 = expr.children[0].value
+                e2 = expr.children[2].value
+                long1 = len(e1)
+                long2 = len(e2)
+                lenconcat = long1+long2
+                compteur+=4
+                return f"""mov edx, {long1}\nmov ebx, {long2}\nadd edx, ebx\nmovsx rdx, ebx\nsub rdx, 1\nmov len_concat, rdx\nmovsx rdx, ebx\nmov r10, rdx\nmov r11d, 0
+                \nmovsx rdx, ebx\nmov r8, rdx\nmov r9d, 0\ncdqe\nmov edx, 16\nsub rdx, 1\nadd rbx, rdx\nmov esi, 16\nmov edx, 0\ndiv rsi
+                \nimul rbx, rbx, 16\nsub rsp, rbx\nmov rbx, rsp\nadd rbx, 0\nmov rax, rbx\nmov i, 0\njmp debut{compteur-3}
+                \ndebut{compteur-3}:\nmov ebx, rax\ncmp ebx, {lenconcat} jl debut{compteur}\nmov rsp rsi\nfin{compteur-3}
+                \ndebut{compteur-2}:\nmov ebx, rax\ncdqe\nmovzx ecx, [{e2}+rbx]\nmov rdx, rax\nmov ebx, i\ncdqe\nmov [rdx+rbx], cl\nfin{compteur-2}
+                \ndebut{compteur-1}:\nadd i, 1\nfin{compteur-1}
+                \ndebut{compteur}:\nmov ebx, i\ncdque\ncmp rbx, 6\nja debut{compteur-2}\nmov ebx, i\ncdqe\nmovzx ecx, [{e1}+rax]\nmov rdx, rax\nmov ebx, i\ncdqe\nmov [rdx+rbx], cl\njmp debut{compteur-1}\nfin{compteur}"""
         elif expr.children[1] == "-":
             if t1==0 and t2==0:
                 return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\nsub rax, rbx"
@@ -121,7 +169,28 @@ def compile_expr(expr):
             if (t1=="1" and t2=="0") or (t1=="0" and t2=="1"):
                 return #mul entier pointeur
             elif (t1=="2" and t2=="0") or (t1=="0" and t2=="2"):
-                return #mul entier string
+                if (t1=="0"):
+                    e1 = expr.children[0].value
+                    e2 = expr.children[2].value
+                    long = len(e2)
+                    lenconcat = long*e1
+                    compteur+=3
+                    return f"""mov eax, {long}\nimul eax, {e2}\nmovsx rdx, eax\nsub rdx, 1\nmov concat, rdx\nmovsx rdx, eax\nmov r8, rdx\nmov r9d, 0\nmovsx rdx, eax\nmov rcx, rdx\nmov ebx, 0\ncdqe\nmov edx, 16\nsub rdx, 1\nadd rax, rdx\nmov ebx, 16\nmov edx, 0\ndiv rbx\nimul rax, rax, 16
+                    \nsub rsp, rbx\nmov rax, rsp\nadd rax, 0\nmov concat, rax\nmov i, 0\nmov k, 0\n jmp debut{compteur-3}
+                    \ndebut{compteur-2}:\nmov eax, k\ncmp eax, {e1}\njl debut{compteur-1}\nmov rax, concat\nmov rsp, rsi\nfin{compteur-2}
+                    \ndebut{compteur-1}:\nmov eax, i\ncmp eax, {long}\njl debut{compteur}\nadd k, 1\nfin{compteur-1}
+                    \ndebut{compteur}:\nmov eax, i\nmovsx rdx, eax\nmov rax, {e2}\nadd rax, rdx\nmovzx ecx, [rax]\nmov rdx, concat\nmov eax, i\ncdqe\nmov [rdx+rax], cl\nadd i, 1\nfin{compteur}"""
+                else:
+                    e1 = expr.children[0].value
+                    e2 = expr.children[2].value
+                    long = len(e1)
+                    lenconcat = long*e2
+                    compteur+=3
+                    return f"""mov eax, {long}\nimul eax, {e1}\nmovsx rdx, eax\nsub rdx, 1\nmov concat, rdx\nmovsx rdx, eax\nmov r8, rdx\nmov r9d, 0\nmovsx rdx, eax\nmov rcx, rdx\nmov ebx, 0\ncdqe\nmov edx, 16\nsub rdx, 1\nadd rax, rdx\nmov ebx, 16\nmov edx, 0\ndiv rbx\nimul rax, rax, 16
+                    \nsub rsp, rbx\nmov rax, rsp\nadd rax, 0\nmov concat, rax\nmov i, 0\nmov k, 0\n jmp debut{compteur-3}
+                    \ndebut{compteur-2}:\nmov eax, k\ncmp eax, {e2}\njl debut{compteur-1}\nmov rax, concat\nmov rsp, rsi\nfin{compteur-2}
+                    \ndebut{compteur-1}:\nmov eax, i\ncmp eax, {long}\njl debut{compteur}\nadd k, 1\nfin{compteur-1}
+                    \ndebut{compteur}:\nmov eax, i\nmovsx rdx, eax\nmov rax, {e1}\nadd rax, rdx\nmovzx ecx, [rax]\nmov rdx, concat\nmov eax, i\ncdqe\nmov [rdx+rax], cl\nadd i, 1\nfin{compteur}"""
             elif t1==0 and t2==0:
                 return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\nimul rax, rbx"
             else:
@@ -135,8 +204,23 @@ def compile_expr(expr):
             raise Exception("Binexp Not implemented")
     elif expr.data == "parenexpr":
         return compile_expr(expr.children[0])
-    else :
+    elif expr.data == "len":
+        long = len(expr.children[0].children[0].value)
+        return f"mov rax, {long}"
+    elif expr.data == "isequal":
+        if expr.children[0].children[0].value == expr.children[1].children[0].value:
+            isequal = 1
+        else:
+            isequal = 0
+        return f"mov rax, {isequal}"
+    
+    elif expr.data == "charat":
+        v = expr.children[0].value
+        e = expr.children[1].children[0].value
+        return f"movzx eax, [{v}[{e}]]"
+    else:
         raise Exception("Not implemented")
+    
 
 def type_assign(expr,lhs):
     if expr.data == "variable":
@@ -179,8 +263,14 @@ def compile_cmd(cmd):
             return f"debut{index}:{e}\ncmp rax,\njz fin{index}\n{b}\njmp debut{index}\nfin{index}:\n"
         else:#regarde si le string est vide
             return f"debut{index}:{e}\ncmp rax,\njz fin{index}\n{b}\njmp debut{index}\nfin{index}:\n"
-    else :
-        raise Exception("Not implemented")
+    elif cmd.data == "setcharat":
+        v = cmd.children[0].value
+        e1 = compile_expr(cmd.children[1])
+        e2 = compile_expr(cmd.children[2])
+        return f"movzx eax, {e2}\nmov {v}[{e1}], al"
+    else:
+        raise Exception ("Not Implemented")
+
 def compile_bloc(bloc):
     return "\n".join([compile_cmd(t) for t in bloc.children])
 
