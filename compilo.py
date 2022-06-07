@@ -102,11 +102,22 @@ def compile_expr(expr):
                 e+=f"{ord(i)}"
         return f"movabs rax, [{e}]"
     elif expr.data == "binexpr":
-        e1 = compile_expr(expr.children[0])
-        e2 = compile_expr(expr.children[2])
-        t1=type(expr.children[0])
-        t2=type(expr.children[2])
+        exp1=expr.children[0]
+        exp2=expr.children[2]
+        e1 = compile_expr(exp1)
+        e2 = compile_expr(exp2)
         if expr.children[1] == "+":
+            return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\n\
+                cmp {type(exp1)} {type(exp2)}\nje sol1\nsol1: cmp {type(exp1)} 0\nje int\ncmp {type(exp1)} 1\nje point\nstr\npoint: \nint: add rax, rbx\njmp fin\n\
+                cmp {type(exp1)} 0\nje i1\ni1: cmp {type(exp2)} 1\nje i+p\njne i+s\n\
+                cmp {type(exp1)} 1\nje p1\np1: cmp {type(exp2)} 0\nje i+p\njne p+s\n\
+                cmp {type(exp1)} 2\nje s1\ns1: cmp {type(exp2)} 0\nje i+s\njne p+s\n\
+                cmp {type(exp2)} 0\nje i2\ni2: cmp {type(exp1)} 1\nje i+p\njne i+s\n\
+                cmp {type(exp2)} 1\nje p2\np2: cmp {type(exp1)} 0\nje i+p\njne p+s\n\
+                cmp {type(exp2)} 2\nje s2\ns2: cmp {type(exp1)} 0\nje i+s\njne p+s\n\
+                i+p: \njmp fin\n\
+                i+s: \njmp fin\n\
+                p+s: \njmp fin\nfin:"
             if t1==0 and t2==0:
                 return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\nadd rax, rbx"
             elif (t1==0 and t2==1) or (t1==1 and t2==0):
@@ -159,17 +170,23 @@ def compile_expr(expr):
                 \ndebut{compteur-1}:\nadd i, 1\nfin{compteur-1}
                 \ndebut{compteur}:\nmov ebx, i\ncdque\ncmp rbx, 6\nja debut{compteur-2}\nmov ebx, i\ncdqe\nmovzx ecx, [{e1}+rax]\nmov rdx, rax\nmov ebx, i\ncdqe\nmov [rdx+rbx], cl\njmp debut{compteur-1}\nfin{compteur}"""
         elif expr.children[1] == "-":
-            if t1==0 and t2==0:
-                return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\nsub rax, rbx"
-            elif t1==1 and t2==1:
-                return #sub pointers
-            else:
-                raise Exception("incompatible types for this operation")
+                return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\n\
+                cmp {type(exp1)} {type(exp2)}\nje eq\neq: cmp {type(exp1)} 0\nje int\npointer\nint: sub rax, rbx\njmp fin\n"
         elif expr.children[1] == "*":
-            if (t1=="1" and t2=="0") or (t1=="0" and t2=="1"):
-                return #mul entier pointeur
-            elif (t1=="2" and t2=="0") or (t1=="0" and t2=="2"):
-                if (t1=="0"):
+            return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\n\
+                cmp {type(exp1)} {type(exp2)}\nje sol1\nsol1: cmp {type(exp1)} 0\n je int\nint: imul rax, rbx\njmp fin\n\
+                cmp {type(exp1)} 0\nje i1\ni1: cmp {type(exp2)} 1\nje i+p\njne i+s\n\
+                cmp {type(exp1)} 1\nje p1\np1: cmp {type(exp2)} 0\nje i+p\n\
+                cmp {type(exp1)} 2\nje s1\ns1: cmp {type(exp2)} 0\nje i+s\n\
+                cmp {type(exp2)} 0\nje i2\ni2: cmp {type(exp1)} 1\nje i+p\njne i+s\n\
+                cmp {type(exp2)} 1\nje p2\np2: cmp {type(exp1)} 0\nje i+p\n\
+                cmp {type(exp2)} 2\nje s2\ns2: cmp {type(exp1)} 0\nje i+s\n\
+                i+p: \njmp fin\n\
+                i+s: \njmp fin\nfin:"
+        elif (t1=="1" and t2=="0") or (t1=="0" and t2=="1"):
+                return 
+        elif (t1=="2" and t2=="0") or (t1=="0" and t2=="2"):
+            if (t1=="0"):
                     e1 = expr.children[0].value
                     e2 = expr.children[2].value
                     long = len(e2)
@@ -180,7 +197,7 @@ def compile_expr(expr):
                     \ndebut{compteur-2}:\nmov eax, k\ncmp eax, {e1}\njl debut{compteur-1}\nmov rax, concat\nmov rsp, rsi\nfin{compteur-2}
                     \ndebut{compteur-1}:\nmov eax, i\ncmp eax, {long}\njl debut{compteur}\nadd k, 1\nfin{compteur-1}
                     \ndebut{compteur}:\nmov eax, i\nmovsx rdx, eax\nmov rax, {e2}\nadd rax, rdx\nmovzx ecx, [rax]\nmov rdx, concat\nmov eax, i\ncdqe\nmov [rdx+rax], cl\nadd i, 1\nfin{compteur}"""
-                else:
+            else:
                     e1 = expr.children[0].value
                     e2 = expr.children[2].value
                     long = len(e1)
@@ -191,17 +208,13 @@ def compile_expr(expr):
                     \ndebut{compteur-2}:\nmov eax, k\ncmp eax, {e2}\njl debut{compteur-1}\nmov rax, concat\nmov rsp, rsi\nfin{compteur-2}
                     \ndebut{compteur-1}:\nmov eax, i\ncmp eax, {long}\njl debut{compteur}\nadd k, 1\nfin{compteur-1}
                     \ndebut{compteur}:\nmov eax, i\nmovsx rdx, eax\nmov rax, {e1}\nadd rax, rdx\nmovzx ecx, [rax]\nmov rdx, concat\nmov eax, i\ncdqe\nmov [rdx+rax], cl\nadd i, 1\nfin{compteur}"""
-            elif t1==0 and t2==0:
+        elif t1==0 and t2==0:
                 return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\nimul rax, rbx"
-            else:
-                raise Exception("incompatible types for this operation")
-        elif expr.children[1] == "/":
-            if t1==0 and t2==0:
-                return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\ndiv rax, rbx"
-            else:
-                raise Exception("incompatible types for this operation")
         else:
-            raise Exception("Binexp Not implemented")
+                raise Exception("incompatible types for this operation")
+    elif expr.children[1] == "/":
+            return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\n\
+            cmp {type(exp1)} {type(exp2)}\nje sol1\nsol1: cmp {type(exp1)} 0\n je int\nint: div rax, rbx"
     elif expr.data == "parenexpr":
         return compile_expr(expr.children[0])
     elif expr.data == "len":
@@ -225,15 +238,15 @@ def compile_expr(expr):
 def type_assign(expr,lhs):
     if expr.data == "variable":
         return f"mov [{lhs}_type] [{expr.children[0].value}_type]"
-    elif expr.data=="nombre":
+    elif expr.data == "nombre":
         return f"mov [{lhs}_type] 0"
-    elif expr.data=="pointer":
+    elif expr.data == "pointer":
         return f"mov [{lhs}_type] 1"
-    elif expr.data=="string":
+    elif expr.data =="string":
         return f"mov [{lhs}_type] 2"
     elif expr.data == "binexpr":
-        t1 = type_assign(expr.children[0])
-        t2 = type_assign(expr.children[2])
+        t1 = type(expr.children[0])
+        t2 = type(expr.children[2])
         if expr.children[1] == "+":
             if (t1=="2" or t2=="2"):
                 return f"mov [{lhs}_type] 2"
@@ -254,15 +267,18 @@ def compile_cmd(cmd):
         return f"{rhs}\n{type_assign(expr,lhs)}\nmov [{lhs}],rax"
     elif cmd.data == "while":
         e = compile_expr(cmd.children[0])
-        te=type(cmd.children[0])
+        te = type(cmd.children[0])
         b = compile_bloc(cmd.children[1])
         index=next(cpt)
-        if te==0:
-            return f"debut{index}:{e}\ncmp rax,0\njz fin{index}\n{b}\njmp debut{index}\nfin{index}:\n"
-        if te==1:#regarde si l'adresse est vide
-            return f"debut{index}:{e}\ncmp rax,\njz fin{index}\n{b}\njmp debut{index}\nfin{index}:\n"
-        else:#regarde si le string est vide
-            return f"debut{index}:{e}\ncmp rax,\njz fin{index}\n{b}\njmp debut{index}\nfin{index}:\n"
+        return f"debut{index}:{e}\ncmp {te}, 0\nje int\ncmp {te} 1\nje point\npoint: \njne str\nstr: \nint :cmp rax,0\njz fin{index}\n{b}\njmp debut{index}\nfin{index}:\n"
+    elif cmd.data == "printf":
+        e1 = compile_cmd(cmd.children[0])
+        return f"{e1}\nmov rdi, fmt\nmov rsi, rax\nxor rax, rax\ncall printf"
+    elif cmd.data =="if":
+        e1 = compile_expr(cmd.children[0])
+        e2 = compile_cmd(cmd.children[1])
+        index=next(cpt)
+        return f"{e1}\ncmp {te}, 0\nje int\ncmp {te} 1\nje point\npoint: \njne str\nstr: \nint: cmp rax, 0\njz fin{index}\n{e2}\nfin{index}"
     elif cmd.data == "setcharat":
         v = cmd.children[0].value
         e1 = compile_expr(cmd.children[1])
@@ -271,12 +287,13 @@ def compile_cmd(cmd):
     else:
         raise Exception ("Not Implemented")
 
+
 def compile_bloc(bloc):
     return "\n".join([compile_cmd(t) for t in bloc.children])
 
 def compile_vars(ast):
     s=""
-    for i in range(len(ast)):
+    for i in range(len(ast.children)):
         s+= f"mov rbx, [rbp-0x10]\nmov rdi,[rbx-{8*(i+1)}]\ncall atoi\nmov [{ast.children[i].value}],rax\n"
     return s
 
@@ -292,6 +309,10 @@ def compile(prg):
 
 prg = grammaire.parse("main(X,Y) {while(X){X=X-1;Y=Y+1;}return(Y+1);}")
 print(compile(prg))
+
+
+
+
 
 def gamma_expr(expr):
     if expr.data == "nombre":
