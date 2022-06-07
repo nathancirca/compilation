@@ -39,6 +39,8 @@ def pp_expr(expr):
         return f"*{pp_expr(expr.children[0])}"
     elif expr.data=="adresse":
         return f"&{pp_expr(expr.children[0])}"
+    elif expr.data=="malloc":
+        return f"malloc({pp_expr(expr.children[0])})"
     else:
         raise Exception("Not implemented")
 
@@ -61,6 +63,10 @@ def pp_cmd(cmd):
         lhs= cmd.children[0].value
         rhs=pp_expr(cmd.children[1])
         return f"&{lhs}={rhs};"
+    elif cmd.data=="malloc":
+        lhs= cmd.children[0].value
+        rhs=pp_expr(cmd.children[1])
+        return f"{lhs}={rhs};"
     else: 
         raise Exception("Not implemented yet")
 
@@ -175,6 +181,8 @@ def compile_expr(expr):
         return f" push rbp\nmov rbp,rsp\nmov rax,QWORD PTR [rbp-8]\nmov QWORD PTR [rax],{expr.children[1].value}\npop rbp"
     elif expr.data=="adresse":
         return f"push rbp\nmov rbp,rsp\nmov QWORD PTR [rbp], {expr.children[0].children[0]}\nlea rax,[rbp]\nmov QWORD PTR [rbp],rax\npop rbp"
+    elif expr.data=="malloc":
+        return f"mov edi,{expr.children[0].value}\nextern malloc\ncall malloc"
     else:
         raise Exception("Not implemented")
     
