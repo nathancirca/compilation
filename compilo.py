@@ -210,6 +210,9 @@ def compile_expr(expr):
                     \ndebut{compteur}:\nmov eax, i\nmovsx rdx, eax\nmov rax, {e1}\nadd rax, rdx\nmovzx ecx, [rax]\nmov rdx, concat\nmov eax, i\ncdqe\nmov [rdx+rax], cl\nadd i, 1\nfin{compteur}"""
         elif t1==0 and t2==0:
                 return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\nimul rax, rbx"
+        elif expr.children[1] == "/":
+            return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\n\
+                cmp {type(exp1)} {type(exp2)}\nje sol1\nsol1: cmp {type(exp1)} 0\n je int\nint: div rax, rbx"
         else:
                 raise Exception("incompatible types for this operation")
     elif expr.children[1] == "/":
@@ -286,7 +289,6 @@ def compile_cmd(cmd):
         return f"movzx eax, {e2}\nmov {v}[{e1}], al"
     else:
         raise Exception ("Not Implemented")
-
 
 def compile_bloc(bloc):
     return "\n".join([compile_cmd(t) for t in bloc.children])
