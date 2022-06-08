@@ -1,5 +1,5 @@
 import lark
-index=0
+
 grammaire = lark.Lark("""
 variables : IDENTIFIANT ("," IDENTIFIANT)*
 expr : IDENTIFIANT -> variable | NUMBER -> nombre| CHAR -> chaine | expr OP expr ->binexpr| "(" expr ")" -> parenexpr|"*" expr -> pointer|"&" IDENTIFIANT -> adresse| "malloc" "(" NUMBER ")" -> malloc| "len" "(" expr ")" -> len | IDENTIFIANT".charAt" "(" expr ")" -> charat | expr "==" expr -> isequal
@@ -15,7 +15,7 @@ CHAR : /["][a-zA-Z0-9]*["]/
 """, start = "prog")
 
 cpt =iter(range(10000))
-
+index=0
 
 def read_file(file):
     f = open(file, "r")
@@ -99,7 +99,13 @@ def adresse(expr):
     if expr.data=="adresse":
         return f"*{compile_expr(expr.children[0])}"
     else:
-        return compile_expr(expr) 
+        return compile_expr(expr)
+
+def pointer(expr):
+    if expr.data=="pointer":
+        return f"*{compile_expr(expr.children[0])}"
+    else:
+        return compile_expr(expr)
 
 def type(expr):
     if expr.data =="variable":
@@ -268,11 +274,7 @@ def compile(prg):
 prg = grammaire.parse("main(X,Y) {while(X){X=X-1;Y=Y+1;}return(Y+1);}")
 print(compile(prg))
 
-def pointer(expr):
-    if expr.data=="pointer":
-        return f"*{compile_expr(expr.children[0])}"
-    else:
-        return compile_expr(expr)
+
 
 
 
