@@ -22,6 +22,18 @@ IDENTIFIANT: /[a-zA-Z][a-zA-Z0-9]*/
 
 cpt=iter(range(10000))
 
+
+def read_file(file):
+    f = open(file, "r")
+    code = f.read()
+    f.close()
+    return code
+
+
+
+
+
+
 def pp_variables(vars):
     return ", ".join([t.value for t in vars.children])
 
@@ -40,7 +52,7 @@ def pp_expr(expr):
     elif expr.data=="adresse":
         return f"&{pp_expr(expr.children[0])}"
     elif expr.data=="malloc":
-        return f"malloc({pp_expr(expr.children[0])})"
+        return f"malloc({expr.children[0].value})"
     else:
         raise Exception("Not implemented")
 
@@ -84,20 +96,32 @@ def pp_prg(prog):
 # bloc=grammaire.parse("*X=Y;A=&B;")
 # print(bloc)
 # print(pp_bloc(bloc))
-prg=grammaire.parse("""
-main(first)
-{
-    *p=0;
-    first=0;
-    counter=0; 
-    second=1;
-    next=3;
-    return(next);
-}""")
+# prg=grammaire.parse("""
+# main(first)
+# {
+#     *p=0;
+#     first=0;
+#     counter=0; 
+#     second=1;
+#     next=3;
+#     return(next);
+# }""")
+
+
+
+
+
+# expr=grammaire.parse("malloc(8)")
+# print(expr)
+# print(pp_expr(expr))
+
+# cmd=grammaire.parse("P=malloc(8);")
+# print(cmd)
+# print(pp_cmd(cmd))
+
 #bloc=grammaire.parse("X=3;Y=3;")
 #print(pp_bloc(bloc))
 #print(grammaire.parse("printf(X);"))
-print(pp_prg(prg))
 #print(pp_variables(prg.children[0]))
 #print(prg)
 #print(prg.children[0].children[0].value)
@@ -187,7 +211,6 @@ def compile_expr(expr):
         raise Exception("Not implemented")
     
 
-print(compile(prg))
 
 
 def pointer(expr):
@@ -201,3 +224,9 @@ def adresse(expr):
         return f"*{compile_expr(expr.children[0])}"
     else:
         return compile_expr(expr) 
+
+
+
+prg=grammaire.parse(read_file("test.txt"))
+print(pp_prg(prg))
+compile(prg)

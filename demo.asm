@@ -2,7 +2,7 @@ extern printf, atoi
 global main
 section .data
 fmt: db "%d", 10, 0
-VAR_DECL
+
 
 section .text
 main:
@@ -11,11 +11,15 @@ main:
   push rdi
   push rsi
 
-second : dq 0
-counter : dq 0
-next : dq 0
 first : dq 0
 p : dq 0
+next : dq 0
+counter : dq 0
+second : dq 0
+mov edi,8
+extern malloc
+call malloc
+mov [p],rax
 mov rax,0
 mov [p],rax
 mov rax,0
