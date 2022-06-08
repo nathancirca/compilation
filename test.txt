@@ -1,6 +1,7 @@
-main(next,p)
+main(a)
 {   
-    p=malloc(8);
-    next=next+3;
-    return(next);
+    q=malloc(8);
+    var=20;
+    q=&var;
+    return(p);
 }

@@ -50,7 +50,7 @@ def pp_expr(expr):
     elif expr.data=="pointer":
         return f"*{pp_expr(expr.children[0])}"
     elif expr.data=="adresse":
-        return f"&{pp_expr(expr.children[0])}"
+        return f"&{expr.children[0].value}"
     elif expr.data=="malloc":
         return f"malloc({expr.children[0].value})"
     else:
@@ -163,7 +163,7 @@ def compile(prg):
 def compile_variables(ast):
     s=""
     for i in range(len(ast.children)):
-        s+= f"mov rbx,[rbp-0x10]\nmov rdi,[rbx-{8*(i+1)}]\ncall atoi \nmov [{ast.children[i].value}],rax\n"
+        s+= f"\nmov rbx,[rbp-0x10]\nmov rdi,[rbx+{8*(i+1)}]\ncall atoi \nmov [{ast.children[i].value}],rax\n"
     return s
 
 def compile_cmd(cmd):
@@ -203,9 +203,9 @@ def compile_expr(expr):
     elif expr.data=="parenexpr":
         return compile_expr(expr.children[0])
     elif expr.data=="pointer":
-        return f" push rbp\nmov rbp,rsp\nmov rax,QWORD PTR [rbp-8]\nmov QWORD PTR [rax],{expr.children[1].value}\npop rbp"
+        return f" push rbp\nmov rbp,rsp\nmov rax,QWORD [rbp-8]\nmov QWORD [rax],{expr.children[1].value}\npop rbp"
     elif expr.data=="adresse":
-        return f"push rbp\nmov rbp,rsp\nmov QWORD PTR [rbp], {expr.children[0].children[0]}\nlea rax,[rbp]\nmov QWORD PTR [rbp],rax\npop rbp"
+        return f"push rbp\nmov rbp,rsp\nmov QWORD [rbp], {expr.children[0]}\nlea rax,[rbp]\nmov QWORD [rbp],rax\npop rbp"
     elif expr.data=="malloc":
         return f"mov edi,{expr.children[0].value}\nextern malloc\ncall malloc"
     else:
