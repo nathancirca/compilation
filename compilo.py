@@ -1,9 +1,9 @@
 import lark
-
+index=0
 grammaire = lark.Lark("""
 variables : IDENTIFIANT ("," IDENTIFIANT)*
-expr : IDENTIFIANT -> variable | NUMBER -> nombre | expr OP expr ->binexpr| "(" expr ")" -> parenexpr|"*" expr -> pointer|"&" IDENTIFIANT -> adresse| "malloc" "(" NUMBER ")" -> malloc
-cmd : IDENTIFIANT "=" expr ";" -> assignment | "while" "(" expr ")" "{" bloc "}" -> while | "if" "(" expr ")" "{" bloc "}" -> if | "printf" "(" expr ")" ";" -> printf| "*" IDENTIFIANT "=" expr ";"-> pointer |IDENTIFIANT "=" "malloc" "(" NUMBER ")" ";"-> malloc
+expr : IDENTIFIANT -> variable | NUMBER -> nombre| CHAR -> chaine | expr OP expr ->binexpr| "(" expr ")" -> parenexpr|"*" expr -> pointer|"&" IDENTIFIANT -> adresse| "malloc" "(" NUMBER ")" -> malloc| "len" "(" expr ")" -> len | IDENTIFIANT".charAt" "(" expr ")" -> charat | expr "==" expr -> isequal
+cmd : IDENTIFIANT "=" expr ";" -> assignment | "while" "(" expr ")" "{" bloc "}" -> while | "if" "(" expr ")" "{" bloc "}" -> if | "printf" "(" expr ")" ";" -> printf| "*" IDENTIFIANT "=" expr ";"-> pointer |IDENTIFIANT "=" "malloc" "(" NUMBER ")" ";"-> malloc| IDENTIFIANT".setcharAt" "(" expr "," expr ")" ";"-> setcharat
 bloc : (cmd)*
 prog : "main" "(" variables ")" "{" bloc "return" "(" expr ")" ";" "}"
 NUMBER : /[0-9]+/
@@ -16,10 +16,17 @@ CHAR : /["][a-zA-Z0-9]*["]/
 
 cpt =iter(range(10000))
 
+
+def read_file(file):
+    f = open(file, "r")
+    code = f.read()
+    f.close()
+    return code
+
 def pp_variables(vars):
     return ", ".join([t.value for t in vars.children])
 def pp_expr(expr):
-    if expr.data in {"variable","nombre"}:
+    if expr.data in {"variable","nombre","chaine"}:
         return expr.children[0].value
     elif expr.data == "binexpr":
         e1 = pp_expr(expr.children[0])
@@ -34,6 +41,17 @@ def pp_expr(expr):
         return f"&{pp_expr(expr.children[0])}"
     elif expr.data=="malloc":
         return f"malloc({pp_expr(expr.children[0])})"
+    elif expr.data == "len":
+        e = pp_expr(expr.children[0])
+        return f"""len ( {e} )"""
+    elif expr.data == "charat":
+        v = expr.children[0].value
+        e = pp_expr(expr.children[1])
+        return f"""{v}.charAt( {e} )"""
+    elif expr.data == "isequal":
+        e1 = pp_expr(expr.children[0])
+        e2 = pp_expr(expr.children[1])
+        return f"""{e1} == {e2}"""
     else :
         raise Exception("Not implemented")
 def pp_cmd(cmd):
@@ -59,6 +77,11 @@ def pp_cmd(cmd):
         lhs= cmd.children[0].value
         rhs=pp_expr(cmd.children[1])
         return f"{lhs}={rhs};"
+    elif cmd.data =="setcharat":
+        v = cmd.children[0].value
+        e1 = pp_expr(cmd.children[1])
+        e2 = pp_expr(cmd.children[2])
+        return f"""{v}.setcharAt( {e1} , {e2} )"""
     else :
         raise Exception("Not implemented")
 def pp_bloc(bloc):
@@ -104,23 +127,23 @@ def type(expr):
 
 def type_assign(expr,lhs):
     if expr.data == "variable":
-        return f"mov [{lhs}_type] [{expr.children[0].value}_type]"
+        return f"mov [{lhs}_type], [{expr.children[0].value}_type]"
     elif expr.data == "nombre":
-        return f"mov [{lhs}_type] 0"
+        return f"mov [{lhs}_type], 0"
     elif expr.data == "pointer":
-        return f"mov [{lhs}_type] 1"
+        return f"mov [{lhs}_type], 1"
     elif expr.data =="string":
-        return f"mov [{lhs}_type] 2"
+        return f"mov [{lhs}_type], 2"
     elif expr.data == "binexpr":
         t1 = type(expr.children[0])
         t2 = type(expr.children[2])
         if expr.children[1] == "+":
             if (t1=="2" or t2=="2"):
-                return f"mov [{lhs}_type] 2"
+                return f"mov [{lhs}_type], 2"
             elif (t1=="1" or t2=="1"):
-                return f"mov [{lhs}_type] 1"
+                return f"mov [{lhs}_type], 1"
             else :
-                return f"mov [{lhs}_type] 0"
+                return f"mov [{lhs}_type], 0"
     elif expr.data == "parenexpr":
         return type_assign(expr.chidlren[0])
     else :
@@ -140,6 +163,9 @@ def var_list(ast):
     return s
 
 def compile_expr(expr):
+    global index
+    print(index)
+    index+=1
     if expr.data == "variable":
         return f"mov rax, [{expr.children[0].value}]"
     elif expr.data == "nombre":
@@ -151,27 +177,27 @@ def compile_expr(expr):
         e2 = compile_expr(exp2)
         if expr.children[1] == "+":
             return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\n\
-                cmp {type(exp1)} {type(exp2)}\nje eq\njne neq\neq: cmp {type(exp1)} 0\nje int\ncmp {type(exp1)} 1\nje point\nstr: \njmp fin\npoint: add rax,rbx\njmp fin\nint: add rax, rbx\njmp fin\n\
-                neq: cmp {type(exp1)} 0\nje i1\njne cp1\ni1: cmp {type(exp2)} 1\nje i+p\njne i+s\n\
-                cp1: cmp {type(exp1)} 1\nje p1\njne cs1\np1: cmp {type(exp2)} 0\nje i+p\njne p+s\n\
-                cs1: cmp {type(exp2)} 0\nje i+s\njne p+s\n\
-                i+p: add rax,rbx\njmp fin\n\
-                i+s: \njmp fin\n\
-                p+s: \njmp fin\nfin:"
+                cmp {type(exp1)}, {type(exp2)}\nje eqadd{index}\njne neqadd{index}\neqadd{index}: cmp {type(exp1)}, 0\nje intadd{index}\ncmp {type(exp1)}, 1\nje pointadd{index}\njne stradd{index}\nstradd{index}: \njmp fin\npointadd{index}: add rax,rbx\njmp fin{index}\nintadd{index}: add rax, rbx\njmp fin{index}\n\
+                neqadd{index}: cmp {type(exp1)}, 0\nje i1{index}\njne cp1{index}\ni1{index}: cmp {type(exp2)}, 1\nje iaddp{index}\njne iadds{index}\n\
+                cp1{index}: cmp {type(exp1)}, 1\nje p1{index}\njne cs1{index}\np1{index}: cmp {type(exp2)}, 0\nje iaddp{index}\njne padds{index}\n\
+                cs1{index}: cmp {type(exp2)}, 0\nje iadds{index}\njne padds{index}\n\
+                iaddp{index}: add rax,rbx\njmp fin{index}\n\
+                iadds{index}: \njmp fin{index}\n\
+                padds{index}: \njmp fin{index}\nfin{index}:"
         elif expr.children[1] == "-":
                 return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\n\
-                cmp {type(exp1)} {type(exp2)}\nje eq\njne fin\neq: cmp {type(exp1)} 0\nje int\npointer\nint: sub rax, rbx\njmp fin\nfin:"
+                cmp {type(exp1)}, {type(exp2)}\nje eq{index}\njne fin{index}\neq{index}: cmp {type(exp1)}, 2\nje fin{index}\nsub rax, rbx\njmp fin{index}\nfin{index}:"
         elif expr.children[1] == "*":
             return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\n\
-                cmp {type(exp1)} {type(exp2)}\nje sol1\nsol1: cmp {type(exp1)} 0\n je int\nint: imul rax, rbx\njmp fin\n\
-                cmp {type(exp1)} 0\nje i1\njne cp\ni1: cmp {type(exp2)} 1\nje i*p\njne i*s\n\
-                cp: cmp {type(exp1)} 1\nje p1\njne cs\np1: cmp {type(exp2)} 0\nje i*p\n\
-                cs: cmp {type(exp2)} 0\nje i*s\n\
-                i*p: imul rax, rbx\njmp fin\n\
-                i*s: \njmp fin\nfin:"
+                cmp {type(exp1)}, {type(exp2)}\nje eqmul{index}\njne neq{index}\neqmul{index}: cmp {type(exp1)}, 0\n je intmul{index}\nintmul: imul rax, rbx\njmp fin\n\
+                neq{index}: cmp {type(exp1)}, 0\nje i1mul{index}\njne cp{index}\ni1mul{index}: cmp {type(exp2)}, 1\nje imulp{index}\njne imuls{index}\n\
+                cp{index}: cmp {type(exp1)}, 1\nje p1mul{index}\njne cs{index}\np1mul{index}: cmp {type(exp2)}, 0\nje imulp{index}\n\
+                cs{index}: cmp {type(exp2)}, 0\nje imuls{index}\n\
+                imulp{index}: imul rax, rbx\njmp fin{index}\n\
+                imuls{index}: \njmp fin{index}\nfin{index}:"
         elif expr.children[1] == "/":
             return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\n\
-                cmp {type(exp1)} {type(exp2)}\nje sol1\njne fin\nsol1: cmp {type(exp1)} 0\n je int\njne fin\nint: div rax, rbx\nfin:"
+                cmp {type(exp1)}, {type(exp2)}\nje eqdiv{index}\njne fin{index}\neqdiv{index}: cmp {type(exp1)}, 0\n je intdiv{index}\njne fin{index}\nintdiv{index}: div rax, rbx\nfin{index}:"
         else:
             raise Exception("Binexp Not implemented")
     elif expr.data == "parenexpr":
@@ -186,6 +212,7 @@ def compile_expr(expr):
         raise Exception("Not implemented")
 
 def compile_cmd(cmd):
+    global index
     if cmd.data == "assignment":
         lhs = cmd.children[0].value
         expr = cmd.children[1]
@@ -195,8 +222,9 @@ def compile_cmd(cmd):
         e = compile_expr(cmd.children[0])
         te = type(cmd.children[0])
         b = compile_bloc(cmd.children[1])
-        index=next(cpt)
-        return f"debut{index}:{e}\ncmp {te}, 0\nje int\ncmp {te} 1\nje point\njne str\npoint: mov eax, [rax]\ntest eax, eax\njz fin{index}\n{b}\njmp debut{index}\nstr: \nint :cmp rax,0\njz fin{index}\n{b}\njmp debut{index}\nfin{index}:\n"
+        index+=1
+        print(index)
+        return f"debut{index}:{e}\ncmp {te}, 0\nje int\ncmp {te}, 1\nje point\njne str\npoint: mov eax, [rax]\ntest eax, eax\njz fin{index}\n{b}\njmp debut{index}\nstr: \nint :cmp rax,0\njz fin{index}\n{b}\njmp debut{index}\nfin{index}:\n"
     elif cmd.data == "printf":
         e1 = compile_cmd(cmd.children[0])
         return f"{e1}\nmov rdi, fmt\nmov rsi, rax\nxor rax, rax\ncall printf"
@@ -204,7 +232,8 @@ def compile_cmd(cmd):
         e1 = compile_expr(cmd.children[0])
         te1=type(cmd.children[0])
         e2 = compile_cmd(cmd.children[1])
-        index=next(cpt)
+        index+=1
+        print(index)
         return f"{e1}\ncmp {te}, 0\nje int\ncmp {te} 1\nje point\njne str\npoint: mov eax, [rax]\ntest eax, eax\njz fin{index}\n{b}\njmp debut{index}\nstr: \nint :cmp rax,0\njz fin{index}\n{b}\nfin{index}:\n"
     elif cmd.data=="pointer":
         lhs= cmd.children[0].value
@@ -229,8 +258,12 @@ def compile(prg):
         code = code.replace("VAR_DECL", var_decl)
         code = code.replace("RETURN",compile_expr(prg.children[2]))
         code = code.replace("BODY", compile_bloc(prg.children[1]))
-        code = code.replace("INIT", compile_vars(prg.children[0]))
+        code = code.replace("VAR_INIT", compile_vars(prg.children[0]))
+        g = open("demo.asm", "w")
+        g.write(code)
+        g.close()
         return code
+
 
 prg = grammaire.parse("main(X,Y) {while(X){X=X-1;Y=Y+1;}return(Y+1);}")
 print(compile(prg))
