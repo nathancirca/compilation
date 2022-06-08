@@ -135,21 +135,21 @@ def type_assign(expr,lhs):
     if expr.data == "variable":
         return f"mov [{lhs}_type], [{expr.children[0].value}_type]"
     elif expr.data == "nombre":
-        return f"mov [{lhs}_type], 0"
+        return f"mov rcx,0\nmov [{lhs}_type], rcx"
     elif expr.data == "pointer":
-        return f"mov [{lhs}_type], 1"
+        return f"mov rcx,1\nmov [{lhs}_type], rcx"
     elif expr.data =="string":
-        return f"mov [{lhs}_type], 2"
+        return f"mov rcx,2\nmov [{lhs}_type], rcx"
     elif expr.data == "binexpr":
         t1 = type(expr.children[0])
         t2 = type(expr.children[2])
         if expr.children[1] == "+":
             if (t1=="2" or t2=="2"):
-                return f"mov [{lhs}_type], 2"
+                return f"mov rcx,2\nmov [{lhs}_type], rcx"
             elif (t1=="1" or t2=="1"):
-                return f"mov [{lhs}_type], 1"
+                return f"mov rcx,1\nmov [{lhs}_type], rcx"
             else :
-                return f"mov [{lhs}_type], 0"
+                return f"mov rcx,0\nmov [{lhs}_type], rcx"
     elif expr.data == "parenexpr":
         return type_assign(expr.chidlren[0])
     else :
@@ -182,28 +182,28 @@ def compile_expr(expr):
         e1 = compile_expr(exp1)
         e2 = compile_expr(exp2)
         if expr.children[1] == "+":
-            return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\n\
-                cmp {type(exp1)}, {type(exp2)}\nje eqadd{index}\njne neqadd{index}\neqadd{index}: cmp {type(exp1)}, 0\nje intadd{index}\ncmp {type(exp1)}, 1\nje pointadd{index}\njne stradd{index}\nstradd{index}: \njmp fin\npointadd{index}: add rax,rbx\njmp fin{index}\nintadd{index}: add rax, rbx\njmp fin{index}\n\
-                neqadd{index}: cmp {type(exp1)}, 0\nje i1{index}\njne cp1{index}\ni1{index}: cmp {type(exp2)}, 1\nje iaddp{index}\njne iadds{index}\n\
-                cp1{index}: cmp {type(exp1)}, 1\nje p1{index}\njne cs1{index}\np1{index}: cmp {type(exp2)}, 0\nje iaddp{index}\njne padds{index}\n\
-                cs1{index}: cmp {type(exp2)}, 0\nje iadds{index}\njne padds{index}\n\
+            return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\nmov rcx, {type(exp1)}\nmov rdx,{type(exp2)}\n\
+                cmp rcx, rdx\nje eqadd{index}\njne neqadd{index}\neqadd{index}: cmp rcx, 0\nje intadd{index}\ncmp rcx, 1\nje pointadd{index}\njne stradd{index}\nstradd{index}: \njmp fin{index}\npointadd{index}: add rax,rbx\njmp fin{index}\nintadd{index}: add rax, rbx\njmp fin{index}\n\
+                neqadd{index}: cmp rcx, 0\nje i1{index}\njne cp1{index}\ni1{index}: cmp rdx, 1\nje iaddp{index}\njne iadds{index}\n\
+                cp1{index}: cmp rcx, 1\nje p1{index}\njne cs1{index}\np1{index}: cmp rdx, 0\nje iaddp{index}\njne padds{index}\n\
+                cs1{index}: cmp rdx, 0\nje iadds{index}\njne padds{index}\n\
                 iaddp{index}: add rax,rbx\njmp fin{index}\n\
                 iadds{index}: \njmp fin{index}\n\
                 padds{index}: \njmp fin{index}\nfin{index}:"
         elif expr.children[1] == "-":
-                return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\n\
-                cmp {type(exp1)}, {type(exp2)}\nje eq{index}\njne fin{index}\neq{index}: cmp {type(exp1)}, 2\nje fin{index}\nsub rax, rbx\njmp fin{index}\nfin{index}:"
+                return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\nmov rcx, {type(exp1)}\nmov rdx,{type(exp2)}\n\
+                cmp rcx, rdx\nje eq{index}\njne fin{index}\neq{index}: cmp rcx, 2\nje fin{index}\nsub rax, rbx\njmp fin{index}\nfin{index}:"
         elif expr.children[1] == "*":
-            return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\n\
-                cmp {type(exp1)}, {type(exp2)}\nje eqmul{index}\njne neq{index}\neqmul{index}: cmp {type(exp1)}, 0\n je intmul{index}\nintmul: imul rax, rbx\njmp fin\n\
-                neq{index}: cmp {type(exp1)}, 0\nje i1mul{index}\njne cp{index}\ni1mul{index}: cmp {type(exp2)}, 1\nje imulp{index}\njne imuls{index}\n\
-                cp{index}: cmp {type(exp1)}, 1\nje p1mul{index}\njne cs{index}\np1mul{index}: cmp {type(exp2)}, 0\nje imulp{index}\n\
-                cs{index}: cmp {type(exp2)}, 0\nje imuls{index}\n\
+            return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\nmov rcx, {type(exp1)}\nmov rdx,{type(exp2)}\n\
+                cmp rcx, rdx\nje eqmul{index}\njne neq{index}\neqmul{index}: cmp rcx, 0\n je intmul{index}\nintmul: imul rax, rbx\njmp fin{index}\n\
+                neq{index}: cmp rcx, 0\nje i1mul{index}\njne cp{index}\ni1mul{index}: cmp rdx, 1\nje imulp{index}\njne imuls{index}\n\
+                cp{index}: cmp rcx, 1\nje p1mul{index}\njne cs{index}\np1mul{index}: cmp rdx, 0\nje imulp{index}\n\
+                cs{index}: cmp rdx, 0\nje imuls{index}\n\
                 imulp{index}: imul rax, rbx\njmp fin{index}\n\
                 imuls{index}: \njmp fin{index}\nfin{index}:"
         elif expr.children[1] == "/":
-            return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\n\
-                cmp {type(exp1)}, {type(exp2)}\nje eqdiv{index}\njne fin{index}\neqdiv{index}: cmp {type(exp1)}, 0\n je intdiv{index}\njne fin{index}\nintdiv{index}: div rax, rbx\nfin{index}:"
+            return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\nmov rcx, {type(exp1)}\nmov rdx,{type(exp2)}\n\
+                cmp rcx, rdx\nje eqdiv{index}\njne fin{index}\neqdiv{index}: cmp rcx, 0\n je intdiv{index}\njne fin{index}\nintdiv{index}: div rax, rbx\nfin{index}:"
         else:
             raise Exception("Binexp Not implemented")
     elif expr.data == "parenexpr":
@@ -230,7 +230,7 @@ def compile_cmd(cmd):
         b = compile_bloc(cmd.children[1])
         index+=1
         print(index)
-        return f"debut{index}:{e}\ncmp {te}, 0\nje int\ncmp {te}, 1\nje point\njne str\npoint: mov eax, [rax]\ntest eax, eax\njz fin{index}\n{b}\njmp debut{index}\nstr: \nint :cmp rax,0\njz fin{index}\n{b}\njmp debut{index}\nfin{index}:\n"
+        return f"debut{index}:{e}\ncmp {te}, 0\nje int{index}\ncmp {te}, 1\nje point{index}\njne str{index}\npoint{index}: mov eax, [rax]\ntest eax, eax\njz fin{index}\njnz ok{index}\nstr{index}: \nint{index} :cmp rax,0\njz fin{index}\n jnz ok{index}\nok{index}: {b}\njmp debut{index}\nfin{index}:\n"
     elif cmd.data == "printf":
         e1 = compile_cmd(cmd.children[0])
         return f"{e1}\nmov rdi, fmt\nmov rsi, rax\nxor rax, rax\ncall printf"
@@ -239,8 +239,7 @@ def compile_cmd(cmd):
         te1=type(cmd.children[0])
         e2 = compile_cmd(cmd.children[1])
         index+=1
-        print(index)
-        return f"{e1}\ncmp {te}, 0\nje int\ncmp {te} 1\nje point\njne str\npoint: mov eax, [rax]\ntest eax, eax\njz fin{index}\n{b}\njmp debut{index}\nstr: \nint :cmp rax,0\njz fin{index}\n{b}\nfin{index}:\n"
+        return f"{e1}\ncmp {te1}, 0\nje int\ncmp {te1} 1\nje point\njne str\npoint: mov eax, [rax]\ntest eax, eax\njz fin{index}\njnz ok{index}\nstr: \nint :cmp rax,0\njz fin{index}\njnz ok{index}\nok: {e2}\nfin{index}:\n"
     elif cmd.data=="pointer":
         lhs= cmd.children[0].value
         rhs=compile_expr(cmd.children[1])
@@ -254,7 +253,7 @@ def compile_bloc(bloc):
 def compile_vars(ast):
     s=""
     for i in range(len(ast.children)):
-        s+= f"mov rbx, [rbp-0x10]\nmov rdi,[rbx-{8*(i+1)}]\ncall atoi\nmov [{ast.children[i].value}],rax\n"
+        s+= f"mov rbx, [rbp+0x10]\nmov rdi,[rbx+{8*(i+1)}]\ncall atoi\nmov [{ast.children[i].value}],rax\n"
     return s
 
 def compile(prg):
@@ -271,7 +270,7 @@ def compile(prg):
         return code
 
 
-prg = grammaire.parse("main(X,Y) {while(X){X=X-1;Y=Y+1;}return(Y+1);}")
+prg = grammaire.parse("main(X) {X=20;X=X+12;return(X);}")
 print(compile(prg))
 
 
