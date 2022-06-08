@@ -1,9 +1,9 @@
-extern printf, atoi
+extern printf, atoi,malloc
 global main
 section .data
 fmt: db "%d", 10, 0
-next : dq 0
 p : dq 0
+next : dq 0
 
 section .text
 main:
@@ -22,7 +22,6 @@ call atoi
 mov [p],rax
 
 mov edi,8
-extern malloc
 call malloc
 mov [p],rax
 
