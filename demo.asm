@@ -24,8 +24,6 @@ mov [X],rax
 mov rax, [X]
 push rax
 mov rax,12
-push rbx
-pop rax
 pop rbx
 mov rcx, [X_type]
 mov rdx,0
@@ -54,17 +52,143 @@ je p15
 jne cs15
 p15: cmp rdx, 0
 je iaddp5
-jne padds5
+jne fin5
                 cs15: cmp rdx, 0
-je iadds5
-jne padds5
+je saddi5
+jne fin5
                 iaddp5: add rax,rbx
 jmp fin5
-                iadds5: 
+                iadds5: lea rcx, X
+mov ebx, X
+mov edx, 8
+mov rsi, rcx
+mov edi, ebx
+mov ebx, 0
+call itoa
+mov edx, 1
+mov ebx, 2
+add edx, ebx
+movsx rdx, ebx
+sub rdx, 1
+mov len_concat, rdx
+movsx rdx, ebx
+mov r10, rdx
+mov r11d, 0
+movsx rdx, ebx
+mov r8, rdx
+mov e9d, 0
+cdqe
+mov edx, 16
+sub rdx, 1
+add rbx, rdx
+mov esi, 16
+mov edx, 0
+div rsi
+imul rbx, rbx, 16
+sub rsp, rbx
+mov rbx, rsp
+add rbx, 0
+mov rax, rbx
+mov i, 0
+jmp debut1
+debut4:
+mov eax, i
+cdque
+cmp rbx, 6
+ja debut2
+mov ebx, i
+cdqe
+movzx ecx, [mov rax, [X]+rbx]
+mov rdx, rax
+mov eax, i
+cdqe
+mov rdx+rbx, cl
+jmp debut3
+fin4:
+debut3:
+add i, 1
+fin3
+ndebut1:
+mov ebx, rax
+cmp eax, len_concat
+jl debut4
+mov rsp rsi
+fin1
+debut2:
+mov ebx, rax
+cdqe
+movzx ecx, [mov rax,12+rbx]
+mov rdx, rax
+mov eax, i
+cdqe
+mov [rdx+rbx], cl
+fin2
 jmp fin5
-                padds5: 
-jmp fin5
-fin5:
+                saddi5: lea rcx, X
+mov ebx, X
+mov edx, 8
+mov rsi, rcx
+mov edi, ebx
+mov ebx, 0
+call itoa
+mov edx, 1
+mov ebx, 2
+add edx, ebx
+movsx rdx, ebx
+sub rdx, 1
+mov len_concat, rdx
+movsx rdx, ebx
+mov r10, rdx
+mov r11d, 0
+movsx rdx, ebx
+mov r8, rdx
+mov e9d, 0
+cdqe
+mov edx, 16
+sub rdx, 1
+add rbx, rdx
+mov esi, 16
+mov edx, 0
+div rsi
+imul rbx, rbx, 16
+sub rsp, rbx
+mov rbx, rsp
+add rbx, 0
+mov rax, rbx
+mov i, 0
+jmp debut1
+debut4:
+mov eax, i
+cdque
+cmp rbx, 6
+ja debut2
+mov ebx, i
+cdqe
+movzx ecx, [mov rax, [X]+rbx]
+mov rdx, rax
+mov eax, i
+cdqe
+mov rdx+rbx, cl
+jmp debut3
+fin4:
+debut3:
+add i, 1
+fin3
+debut1:
+mov ebx, rax
+cmp eax, len_concat
+jl debut4
+mov rsp rsi
+fin1
+debut2:
+mov ebx, rax
+cdqe
+movzx ecx, [mov rax,12+rbx]
+mov rdx, rax
+mov eax, i
+cdqe
+mov [rdx+rbx], cl
+fin2                fin5:
 mov rcx,0
 mov [X_type], rcx
 mov [X],rax

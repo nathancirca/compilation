@@ -16,6 +16,7 @@ CHAR : /["][a-zA-Z0-9]*["]/
 
 cpt =iter(range(10000))
 index=0
+compteur=0
 
 def read_file(file):
     f = open(file, "r")
@@ -170,39 +171,54 @@ def var_list(ast):
 
 def compile_expr(expr):
     global index
+    global compteur
     print(index)
     index+=1
     if expr.data == "variable":
         return f"mov rax, [{expr.children[0].value}]"
     elif expr.data == "nombre":
         return f"mov rax,{expr.children[0].value}"
+    elif expr.data == "chaine":
+        e=''
+        for i in expr.children[0].value:
+            if ord(i) != 34:
+                e+=f"{ord(i)}"
+        return f"movabs rax, {e}"
     elif expr.data == "binexpr":
         exp1=expr.children[0]
         exp2=expr.children[2]
         e1 = compile_expr(exp1)
         e2 = compile_expr(exp2)
         if expr.children[1] == "+":
-            return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\nmov rcx, {type(exp1)}\nmov rdx,{type(exp2)}\n\
+            compteur+=4
+            long1 = len(str(exp1.children[0].value))
+            long2 = len(str(exp2.children[0].value))
+            return f"{e1}\npush rax\n{e2}\npop rbx\nmov rcx, {type(exp1)}\nmov rdx,{type(exp2)}\n\
                 cmp rcx, rdx\nje eqadd{index}\njne neqadd{index}\neqadd{index}: cmp rcx, 0\nje intadd{index}\ncmp rcx, 1\nje pointadd{index}\njne stradd{index}\nstradd{index}: \njmp fin{index}\npointadd{index}: add rax,rbx\njmp fin{index}\nintadd{index}: add rax, rbx\njmp fin{index}\n\
                 neqadd{index}: cmp rcx, 0\nje i1{index}\njne cp1{index}\ni1{index}: cmp rdx, 1\nje iaddp{index}\njne iadds{index}\n\
-                cp1{index}: cmp rcx, 1\nje p1{index}\njne cs1{index}\np1{index}: cmp rdx, 0\nje iaddp{index}\njne padds{index}\n\
-                cs1{index}: cmp rdx, 0\nje iadds{index}\njne padds{index}\n\
+                cp1{index}: cmp rcx, 1\nje p1{index}\njne cs1{index}\np1{index}: cmp rdx, 0\nje iaddp{index}\njne fin{index}\n\
+                cs1{index}: cmp rdx, 0\nje saddi{index}\njne fin{index}\n\
                 iaddp{index}: add rax,rbx\njmp fin{index}\n\
-                iadds{index}: \njmp fin{index}\n\
-                padds{index}: \njmp fin{index}\nfin{index}:"
+                iadds{index}: lea rcx, {exp1.children[0].value}\nmov ebx, {exp1.children[0].value}\nmov edx, 8\nmov rsi, rcx\nmov edi, ebx\nmov ebx, 0\ncall itoa\nmov edx, {long1}\nmov ebx, {long2}\nadd edx, ebx\nmovsx rdx, ebx\nsub rdx, 1\nmov len_concat, rdx\nmovsx rdx, ebx\nmov r10, rdx\nmov r11d, 0\nmovsx rdx, ebx\nmov r8, rdx\nmov e9d, 0\ncdqe\nmov edx, 16\nsub rdx, 1\nadd rbx, rdx\nmov esi, 16\nmov edx, 0\ndiv rsi\nimul rbx, rbx, 16\nsub rsp, rbx\nmov rbx, rsp\nadd rbx, 0\nmov rax, rbx\nmov i, 0\njmp debut{compteur-3}\ndebut{compteur}:\nmov eax, i\ncdque\ncmp rbx, 6\nja debut{compteur-2}\nmov ebx, i\ncdqe\nmovzx ecx, [{str(e1)}+rbx]\nmov rdx, rax\nmov eax, i\ncdqe\nmov rdx+rbx, cl\njmp debut{compteur-1}\nfin{compteur}:\ndebut{compteur-1}:\nadd i, 1\nfin{compteur-1}\nndebut{compteur-3}:\nmov ebx, rax\ncmp eax, len_concat\njl debut{compteur}\nmov rsp rsi\nfin{compteur-3}\ndebut{compteur-2}:\nmov ebx, rax\ncdqe\nmovzx ecx, [{e2}+rbx]\nmov rdx, rax\nmov eax, i\ncdqe\nmov [rdx+rbx], cl\nfin{compteur-2}\njmp fin{index}\n\
+                saddi{index}: lea rcx, {exp1.children[0].value}\nmov ebx, {exp1.children[0].value}\nmov edx, 8\nmov rsi, rcx\nmov edi, ebx\nmov ebx, 0\ncall itoa\nmov edx, {long1}\nmov ebx, {long2}\nadd edx, ebx\nmovsx rdx, ebx\nsub rdx, 1\nmov len_concat, rdx\nmovsx rdx, ebx\nmov r10, rdx\nmov r11d, 0\nmovsx rdx, ebx\nmov r8, rdx\nmov e9d, 0\ncdqe\nmov edx, 16\nsub rdx, 1\nadd rbx, rdx\nmov esi, 16\nmov edx, 0\ndiv rsi\nimul rbx, rbx, 16\nsub rsp, rbx\nmov rbx, rsp\nadd rbx, 0\nmov rax, rbx\nmov i, 0\njmp debut{compteur-3}\ndebut{compteur}:\nmov eax, i\ncdque\ncmp rbx, 6\nja debut{compteur-2}\nmov ebx, i\ncdqe\nmovzx ecx, [{e1}+rbx]\nmov rdx, rax\nmov eax, i\ncdqe\nmov rdx+rbx, cl\njmp debut{compteur-1}\nfin{compteur}:\ndebut{compteur-1}:\nadd i, 1\nfin{compteur-1}\ndebut{compteur-3}:\nmov ebx, rax\ncmp eax, len_concat\njl debut{compteur}\nmov rsp rsi\nfin{compteur-3}\ndebut{compteur-2}:\nmov ebx, rax\ncdqe\nmovzx ecx, [{str(e2)}+rbx]\nmov rdx, rax\nmov eax, i\ncdqe\nmov [rdx+rbx], cl\nfin{compteur-2}\
+                fin{index}:"
         elif expr.children[1] == "-":
-                return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\nmov rcx, {type(exp1)}\nmov rdx,{type(exp2)}\n\
+                return f"{e1}\npush rax\n{e2}\npop rbx\nmov rcx, {type(exp1)}\nmov rdx,{type(exp2)}\n\
                 cmp rcx, rdx\nje eq{index}\njne fin{index}\neq{index}: cmp rcx, 2\nje fin{index}\nsub rax, rbx\njmp fin{index}\nfin{index}:"
         elif expr.children[1] == "*":
-            return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\nmov rcx, {type(exp1)}\nmov rdx,{type(exp2)}\n\
+            long1 = len(str(exp1.children[0].value))
+            long2 = len(str(exp2.children[0].value))
+            compteur+=3
+            return f"{e1}\npush rax\n{e2}\npop rbx\nmov rcx, {type(exp1)}\nmov rdx,{type(exp2)}\n\
                 cmp rcx, rdx\nje eqmul{index}\njne neq{index}\neqmul{index}: cmp rcx, 0\n je intmul{index}\nintmul: imul rax, rbx\njmp fin{index}\n\
                 neq{index}: cmp rcx, 0\nje i1mul{index}\njne cp{index}\ni1mul{index}: cmp rdx, 1\nje imulp{index}\njne imuls{index}\n\
                 cp{index}: cmp rcx, 1\nje p1mul{index}\njne cs{index}\np1mul{index}: cmp rdx, 0\nje imulp{index}\n\
-                cs{index}: cmp rdx, 0\nje imuls{index}\n\
+                cs{index}: cmp rdx, 0\nje smuli{index}\n\
                 imulp{index}: imul rax, rbx\njmp fin{index}\n\
-                imuls{index}: \njmp fin{index}\nfin{index}:"
+                imuls{index}: lea rax, {e2}\nmov rdi, rax\ncall strlen\nimul eax, {e2}\nmovsx rdx, eax\nsub rdx, 1\nmov concat, rdx\nmovsx rdx, eax\nmov r8, rdx\nmov r9d, 0\nmovsx rdx, eax\nmov rcx, rdx\nmov ebx, 0\ncdqe\nmov edx, 16\nsub rdx, 1\nadd rax, rdx\nmov ebx, 16\nmov edx, 0\ndiv rbx\nimul rax, rax, 16\nsub rsp, rbx\nmov rax, rsp\nadd rax, 0\nmov concat, rax\nmov i, 0\nmov k, 0\n jmp debut{compteur-2}\ndebut{compteur}:\nmov eax, i\nmovsx rdx, eax\nmov rax, {e1}\nadd rax, rdx\nmovzx ecx, [rax]\nmov rdx, concat\nmov eax, i\ncdqe\nmov [rdx+rax], cl\nadd i, 1\nfin{compteur}\ndebut{compteur-1}:\nmov eax, i\ncmp eax, {long}\njl debut{compteur}\nadd k, 1\nfin{compteur-1}\ndebut{compteur-2}:\nmov eax, k\ncmp eax, {e2}\njl debut{compteur-1}\nmov rax, concat\nmov rsp, rsi\nfin{compteur-2}\njmp fin{index}\n\
+                smuli{index}: lea rax, {e1}\nmov rdi, rax\ncall strlen\nimul eax, {e2}\nmovsx rdx, eax\nsub rdx, 1\nmov concat, rdx\nmovsx rdx, eax\nmov r8, rdx\nmov r9d, 0\nmovsx rdx, eax\nmov rcx, rdx\nmov ebx, 0\ncdqe\nmov edx, 16\nsub rdx, 1\nadd rax, rdx\nmov ebx, 16\nmov edx, 0\ndiv rbx\nimul rax, rax, 16\nsub rsp, rbx\nmov rax, rsp\nadd rax, 0\nmov concat, rax\nmov i, 0\nmov k, 0\n jmp debut{compteur-2}\ndebut{compteur}:\nmov eax, i\nmovsx rdx, eax\nmov rax, {e2}\nadd rax, rdx\nmovzx ecx, [rax]\nmov rdx, concat\nmov eax, i\ncdqe\nmov [rdx+rax], cl\nadd i, 1\nfin{compteur}\ndebut{compteur-1}:\nmov eax, i\ncmp eax, {long}\njl debut{compteur}\nadd k, 1\nfin{compteur-1}\ndebut{compteur-2}:\nmov eax, k\ncmp eax, {e1}\njl debut{compteur-1}\nmov rax, concat\nmov rsp, rsi\nfin{compteur-2}\nfin{index}:"
         elif expr.children[1] == "/":
-            return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\nmov rcx, {type(exp1)}\nmov rdx,{type(exp2)}\n\
+            return f"{e1}\npush rax\n{e2}\npop rbx\nmov rcx, {type(exp1)}\nmov rdx,{type(exp2)}\n\
                 cmp rcx, rdx\nje eqdiv{index}\njne fin{index}\neqdiv{index}: cmp rcx, 0\n je intdiv{index}\njne fin{index}\nintdiv{index}: div rax, rbx\nfin{index}:"
         else:
             raise Exception("Binexp Not implemented")
