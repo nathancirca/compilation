@@ -15,9 +15,7 @@ CHAR : /["][a-zA-Z0-9]*["]/
 """, start = "prog")
 
 cpt =iter(range(10000))
-<<<<<<< HEAD
 compteur=0
-=======
 index=0
 
 def read_file(file):
@@ -25,7 +23,6 @@ def read_file(file):
     code = f.read()
     f.close()
     return code
->>>>>>> 9cb203b9fb0fcf57fed1c178f521eb11607c0eca
 
 def pp_variables(vars):
     return ", ".join([t.value for t in vars.children])
@@ -63,7 +60,6 @@ def pp_prg(prog):
     ret = pp_expr(prog.children[2])
     return f"main ({vars}){{{bloc} return ({ret});}}"
 
-<<<<<<< HEAD
 def var_list(ast):
     if isinstance(ast, lark.Token):
         if ast.type == "IDENTIFIANT":
@@ -74,7 +70,6 @@ def var_list(ast):
     for c in ast.children:
         s.update(var_list(c))
     return s
-=======
 
 
 def adresse(expr):
@@ -88,7 +83,6 @@ def pointer(expr):
         return f"*{compile_expr(expr.children[0])}"
     else:
         return compile_expr(expr)
->>>>>>> 9cb203b9fb0fcf57fed1c178f521eb11607c0eca
 
 def type(expr):
     if expr.data =="variable":
@@ -144,7 +138,7 @@ def compile_expr(expr):
                 i+p: \njmp fin\n\
                 i+s:\nlea rcx, {exp1.value}\nmov ebx, {exp1.value}\mov edx, 8\nmov rsi, rcx\nmov edi, ebx\nmov ebx, 0\ncall itoa\mov edx, {long1}\nmov ebx, {long2}\nadd edx, ebx\nmovsx rdx, ebx\nsub rdx, 1\nmov len_concat, rdx\nmovsx rdx, ebx\nmov r10, rdx\nmov r11d, 0\nmovsx rdx, ebx\nmov r8, rdx\nmov e9d, 0\ncdqe\nmov edx, 16\nsub rdx, 1\nadd rbx, rdx\nmov esi, 16\nmov edx, 0\ndiv rsi\nimul rbx, rbx, 16\nsub rsp, rbx\nmov rbx, rsp\nadd rbx, 0\nmov rax, rbx\nmov i, 0\njmp debut{compteur-3}\ndebut{compteur}:\nmov eax, i\ncdque\ncmp rbx, 6\nja debut{compteur-2}\nmov ebx, i\ncdqe\nmovzx ecx, [{str(e1)}+rbx]\nmov rdx, rax\nmov eax, i\ncdqe\nmov rdx+rbx, cl\njmp debut{compteur-1}\nfin{compteur}\ndebut{compteur-1}:\nadd i, 1\nfin{compteur-1}\n\\ndebut{compteur-3}:\nmov ebx, rax\ncmp eax, len_concat\njl debut{compteur}\nmov rsp rsi\nfin{compteur-3}\ndebut{compteur-2}:\nmov ebx, rax\ncdqe\nmovzx ecx, [{e2}+rbx]\nmov rdx, rax\nmov eax, i\ncdqe\nmov [rdx+rbx], cl\nfin{compteur-2}    
                 s+i: \lea rcx, {exp1.value}\nmov ebx, {exp1.value}\mov edx, 8\nmov rsi, rcx\nmov edi, ebx\nmov ebx, 0\ncall itoa\mov edx, {long1}\nmov ebx, {long2}\nadd edx, ebx\nmovsx rdx, ebx\nsub rdx, 1\nmov len_concat, rdx\nmovsx rdx, ebx\nmov r10, rdx\nmov r11d, 0\nmovsx rdx, ebx\nmov r8, rdx\nmov e9d, 0\ncdqe\nmov edx, 16\nsub rdx, 1\nadd rbx, rdx\nmov esi, 16\nmov edx, 0\ndiv rsi\nimul rbx, rbx, 16\nsub rsp, rbx\nmov rbx, rsp\nadd rbx, 0\nmov rax, rbx\nmov i, 0\njmp debut{compteur-3} \ndebut{compteur}:\nmov eax, i\ncdque\ncmp rbx, 6\nja debut{compteur-2}\nmov ebx, i\ncdqe\nmovzx ecx, [{e1}+rbx]\nmov rdx, rax\nmov eax, i\ncdqe\nmov rdx+rbx, cl\njmp debut{compteur-1}\nfin{compteur}\ndebut{compteur-1}:\nadd i, 1\nfin{compteur-1}\ndebut{compteur-3}:\nmov ebx, rax\ncmp eax, len_concat\njl debut{compteur}\nmov rsp rsi\nfin{compteur-3}\ndebut{compteur-2}:\nmov ebx, rax\ncdqe\nmovzx ecx, [{str(e2)}+rbx]\nmov rdx, rax\nmov eax, i\ncdqe\nmov [rdx+rbx], cl\nfin{compteur-2}
-                 p+s: \njmp fin\nfin:"""
+                p+s: \njmp fin\nfin:"""
                     
         elif expr.children[1] == "-":
                 return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\n\
@@ -160,6 +154,7 @@ def compile_expr(expr):
                 cmp {type(exp2)} 1\nje p2\np2: cmp {type(exp1)} 0\nje i+p\n\
                 cmp {type(exp2)} 2\nje s2\ns2: cmp {type(exp1)} 0\nje i+s\n\
                 i+p: \njmp fin\n\
+                s+i: \njmp fin\n
                 i+s: \n\nfin:"""
         elif (t1=="1" and t2=="0") or (t1=="0" and t2=="1"):
                 return 
@@ -289,15 +284,6 @@ def compile(prg):
 
 prg = grammaire.parse("main(X,Y) {while(X){X=X-1;Y=Y+1;}return(Y+1);}")
 print(compile(prg))
-
-<<<<<<< HEAD
-=======
-
-
->>>>>>> 9cb203b9fb0fcf57fed1c178f521eb11607c0eca
-
-
-
 
 def gamma_expr(expr):
     if expr.data == "nombre":
