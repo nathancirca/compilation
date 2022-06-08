@@ -2,8 +2,8 @@ import lark
 
 grammaire = lark.Lark("""
 variables : IDENTIFIANT ("," IDENTIFIANT)*
-expr : IDENTIFIANT -> variable | NUMBER -> nombre | expr OP expr ->binexpr| "(" expr ")" -> parenexpr
-cmd : IDENTIFIANT "=" expr ";" -> assignment | "while" "(" expr ")" "{" bloc "}" -> while | "if" "(" expr ")" "{" bloc "}" -> if | "printf" "(" expr ")" ";" -> printf
+expr : IDENTIFIANT -> variable | NUMBER -> nombre | expr OP expr ->binexpr| "(" expr ")" -> parenexpr|"*" expr -> pointer|"&" IDENTIFIANT -> adresse| "malloc" "(" NUMBER ")" -> malloc
+cmd : IDENTIFIANT "=" expr ";" -> assignment | "while" "(" expr ")" "{" bloc "}" -> while | "if" "(" expr ")" "{" bloc "}" -> if | "printf" "(" expr ")" ";" -> printf| "*" IDENTIFIANT "=" expr ";"-> pointer |IDENTIFIANT "=" "malloc" "(" NUMBER ")" ";"-> malloc
 bloc : (cmd)*
 prog : "main" "(" variables ")" "{" bloc "return" "(" expr ")" ";" "}"
 NUMBER : /[0-9]+/
@@ -28,6 +28,12 @@ def pp_expr(expr):
         return f"{e1} {op} {e2}"
     elif expr.data == "parenexpr":
         return f"({pp_expr(expr.children[0])})"
+    elif expr.data=="pointer":
+        return f"*{pp_expr(expr.children[0])}"
+    elif expr.data=="adresse":
+        return f"&{pp_expr(expr.children[0])}"
+    elif expr.data=="malloc":
+        return f"malloc({pp_expr(expr.children[0])})"
     else :
         raise Exception("Not implemented")
 def pp_cmd(cmd):
@@ -41,6 +47,18 @@ def pp_cmd(cmd):
         e = pp_expr(cmd.children[0])
         b = pp_bloc(cmd.children[1])
         return f"{cmd.data} ({e}) {{{b}}}"
+    elif cmd.data=="pointer":
+        lhs= cmd.children[0].value
+        rhs=pp_expr(cmd.children[1])
+        return f"*{lhs}={rhs};"
+    elif cmd.data=="adresse":
+        lhs= cmd.children[0].value
+        rhs=pp_expr(cmd.children[1])
+        return f"&{lhs}={rhs};"
+    elif cmd.data=="malloc":
+        lhs= cmd.children[0].value
+        rhs=pp_expr(cmd.children[1])
+        return f"{lhs}={rhs};"
     else :
         raise Exception("Not implemented")
 def pp_bloc(bloc):
@@ -52,16 +70,13 @@ def pp_prg(prog):
     ret = pp_expr(prog.children[2])
     return f"main ({vars}){{{bloc} return ({ret});}}"
 
-def var_list(ast):
-    if isinstance(ast, lark.Token):
-        if ast.type == "IDENTIFIANT":
-            return {ast.value}
-        else :
-            return set()
-    s=set()
-    for c in ast.children:
-        s.update(var_list(c))
-    return s
+
+
+def adresse(expr):
+    if expr.data=="adresse":
+        return f"*{compile_expr(expr.children[0])}"
+    else:
+        return compile_expr(expr) 
 
 def type(expr):
     if expr.data =="variable":
@@ -86,6 +101,43 @@ def type(expr):
         return type(expr.chidlren[0])
     else :
         raise Exception("Not implemented")
+
+def type_assign(expr,lhs):
+    if expr.data == "variable":
+        return f"mov [{lhs}_type] [{expr.children[0].value}_type]"
+    elif expr.data == "nombre":
+        return f"mov [{lhs}_type] 0"
+    elif expr.data == "pointer":
+        return f"mov [{lhs}_type] 1"
+    elif expr.data =="string":
+        return f"mov [{lhs}_type] 2"
+    elif expr.data == "binexpr":
+        t1 = type(expr.children[0])
+        t2 = type(expr.children[2])
+        if expr.children[1] == "+":
+            if (t1=="2" or t2=="2"):
+                return f"mov [{lhs}_type] 2"
+            elif (t1=="1" or t2=="1"):
+                return f"mov [{lhs}_type] 1"
+            else :
+                return f"mov [{lhs}_type] 0"
+    elif expr.data == "parenexpr":
+        return type_assign(expr.chidlren[0])
+    else :
+        raise Exception("Not implemented")
+
+
+
+def var_list(ast):
+    if isinstance(ast, lark.Token):
+        if ast.type == "IDENTIFIANT":
+            return {ast.value}
+        else :
+            return set()
+    s=set()
+    for c in ast.children:
+        s.update(var_list(c))
+    return s
 
 def compile_expr(expr):
     if expr.data == "variable":
@@ -124,30 +176,12 @@ def compile_expr(expr):
             raise Exception("Binexp Not implemented")
     elif expr.data == "parenexpr":
         return compile_expr(expr.children[0])
-    else :
-        raise Exception("Not implemented")
-
-def type_assign(expr,lhs):
-    if expr.data == "variable":
-        return f"mov [{lhs}_type] [{expr.children[0].value}_type]"
-    elif expr.data == "nombre":
-        return f"mov [{lhs}_type] 0"
-    elif expr.data == "pointer":
-        return f"mov [{lhs}_type] 1"
-    elif expr.data =="string":
-        return f"mov [{lhs}_type] 2"
-    elif expr.data == "binexpr":
-        t1 = type(expr.children[0])
-        t2 = type(expr.children[2])
-        if expr.children[1] == "+":
-            if (t1=="2" or t2=="2"):
-                return f"mov [{lhs}_type] 2"
-            elif (t1=="1" or t2=="1"):
-                return f"mov [{lhs}_type] 1"
-            else :
-                return f"mov [{lhs}_type] 0"
-    elif expr.data == "parenexpr":
-        return type_assign(expr.chidlren[0])
+    elif expr.data=="pointer":
+        return f" push rbp\nmov rbp,rsp\nmov rax,QWORD PTR [rbp-8]\nmov QWORD PTR [rax],{expr.children[1].value}\npop rbp"
+    elif expr.data=="adresse":
+        return f"push rbp\nmov rbp,rsp\nmov QWORD PTR [rbp], {expr.children[0].children[0]}\nlea rax,[rbp]\nmov QWORD PTR [rbp],rax\npop rbp"
+    elif expr.data=="malloc":
+        return f"mov edi,{expr.children[0].value}\nextern malloc\ncall malloc"
     else :
         raise Exception("Not implemented")
 
@@ -172,6 +206,10 @@ def compile_cmd(cmd):
         e2 = compile_cmd(cmd.children[1])
         index=next(cpt)
         return f"{e1}\ncmp {te}, 0\nje int\ncmp {te} 1\nje point\njne str\npoint: mov eax, [rax]\ntest eax, eax\njz fin{index}\n{b}\njmp debut{index}\nstr: \nint :cmp rax,0\njz fin{index}\n{b}\nfin{index}:\n"
+    elif cmd.data=="pointer":
+        lhs= cmd.children[0].value
+        rhs=compile_expr(cmd.children[1])
+        return f"{rhs}\nmov [{lhs}],rax"
     else :
         raise Exception("Not implemented")
 
@@ -196,6 +234,12 @@ def compile(prg):
 
 prg = grammaire.parse("main(X,Y) {while(X){X=X-1;Y=Y+1;}return(Y+1);}")
 print(compile(prg))
+
+def pointer(expr):
+    if expr.data=="pointer":
+        return f"*{compile_expr(expr.children[0])}"
+    else:
+        return compile_expr(expr)
 
 
 
