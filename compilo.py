@@ -99,33 +99,27 @@ def compile_expr(expr):
         e2 = compile_expr(exp2)
         if expr.children[1] == "+":
             return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\n\
-                cmp {type(exp1)} {type(exp2)}\nje sol1\nsol1: cmp {type(exp1)} 0\nje int\ncmp {type(exp1)} 1\nje point\nstr\npoint: \nint: add rax, rbx\njmp fin\n\
-                cmp {type(exp1)} 0\nje i1\ni1: cmp {type(exp2)} 1\nje i+p\njne i+s\n\
-                cmp {type(exp1)} 1\nje p1\np1: cmp {type(exp2)} 0\nje i+p\njne p+s\n\
-                cmp {type(exp1)} 2\nje s1\ns1: cmp {type(exp2)} 0\nje i+s\njne p+s\n\
-                cmp {type(exp2)} 0\nje i2\ni2: cmp {type(exp1)} 1\nje i+p\njne i+s\n\
-                cmp {type(exp2)} 1\nje p2\np2: cmp {type(exp1)} 0\nje i+p\njne p+s\n\
-                cmp {type(exp2)} 2\nje s2\ns2: cmp {type(exp1)} 0\nje i+s\njne p+s\n\
-                i+p: \njmp fin\n\
+                cmp {type(exp1)} {type(exp2)}\nje eq\njne neq\neq: cmp {type(exp1)} 0\nje int\ncmp {type(exp1)} 1\nje point\nstr: \njmp fin\npoint: add rax,rbx\njmp fin\nint: add rax, rbx\njmp fin\n\
+                neq: cmp {type(exp1)} 0\nje i1\njne cp1\ni1: cmp {type(exp2)} 1\nje i+p\njne i+s\n\
+                cp1: cmp {type(exp1)} 1\nje p1\njne cs1\np1: cmp {type(exp2)} 0\nje i+p\njne p+s\n\
+                cs1: cmp {type(exp2)} 0\nje i+s\njne p+s\n\
+                i+p: add rax,rbx\njmp fin\n\
                 i+s: \njmp fin\n\
                 p+s: \njmp fin\nfin:"
         elif expr.children[1] == "-":
                 return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\n\
-                cmp {type(exp1)} {type(exp2)}\nje eq\neq: cmp {type(exp1)} 0\nje int\npointer\nint: sub rax, rbx\njmp fin\n"
+                cmp {type(exp1)} {type(exp2)}\nje eq\njne fin\neq: cmp {type(exp1)} 0\nje int\npointer\nint: sub rax, rbx\njmp fin\nfin:"
         elif expr.children[1] == "*":
             return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\n\
                 cmp {type(exp1)} {type(exp2)}\nje sol1\nsol1: cmp {type(exp1)} 0\n je int\nint: imul rax, rbx\njmp fin\n\
-                cmp {type(exp1)} 0\nje i1\ni1: cmp {type(exp2)} 1\nje i+p\njne i+s\n\
-                cmp {type(exp1)} 1\nje p1\np1: cmp {type(exp2)} 0\nje i+p\n\
-                cmp {type(exp1)} 2\nje s1\ns1: cmp {type(exp2)} 0\nje i+s\n\
-                cmp {type(exp2)} 0\nje i2\ni2: cmp {type(exp1)} 1\nje i+p\njne i+s\n\
-                cmp {type(exp2)} 1\nje p2\np2: cmp {type(exp1)} 0\nje i+p\n\
-                cmp {type(exp2)} 2\nje s2\ns2: cmp {type(exp1)} 0\nje i+s\n\
-                i+p: \njmp fin\n\
-                i+s: \njmp fin\nfin:"
+                cmp {type(exp1)} 0\nje i1\njne cp\ni1: cmp {type(exp2)} 1\nje i*p\njne i*s\n\
+                cp: cmp {type(exp1)} 1\nje p1\njne cs\np1: cmp {type(exp2)} 0\nje i*p\n\
+                cs: cmp {type(exp2)} 0\nje i*s\n\
+                i*p: imul rax, rbx\njmp fin\n\
+                i*s: \njmp fin\nfin:"
         elif expr.children[1] == "/":
             return f"{e1}\npush rax\n{e2}\npush rbx\npop rax\npop rbx\n\
-                cmp {type(exp1)} {type(exp2)}\nje sol1\nsol1: cmp {type(exp1)} 0\n je int\nint: div rax, rbx"
+                cmp {type(exp1)} {type(exp2)}\nje sol1\njne fin\nsol1: cmp {type(exp1)} 0\n je int\njne fin\nint: div rax, rbx\nfin:"
         else:
             raise Exception("Binexp Not implemented")
     elif expr.data == "parenexpr":
@@ -168,15 +162,16 @@ def compile_cmd(cmd):
         te = type(cmd.children[0])
         b = compile_bloc(cmd.children[1])
         index=next(cpt)
-        return f"debut{index}:{e}\ncmp {te}, 0\nje int\ncmp {te} 1\nje point\npoint: \njne str\nstr: \nint :cmp rax,0\njz fin{index}\n{b}\njmp debut{index}\nfin{index}:\n"
+        return f"debut{index}:{e}\ncmp {te}, 0\nje int\ncmp {te} 1\nje point\njne str\npoint: mov eax, [rax]\ntest eax, eax\njz fin{index}\n{b}\njmp debut{index}\nstr: \nint :cmp rax,0\njz fin{index}\n{b}\njmp debut{index}\nfin{index}:\n"
     elif cmd.data == "printf":
         e1 = compile_cmd(cmd.children[0])
         return f"{e1}\nmov rdi, fmt\nmov rsi, rax\nxor rax, rax\ncall printf"
     elif cmd.data =="if":
         e1 = compile_expr(cmd.children[0])
+        te1=type(cmd.children[0])
         e2 = compile_cmd(cmd.children[1])
         index=next(cpt)
-        return f"{e1}\ncmp {te}, 0\nje int\ncmp {te} 1\nje point\npoint: \njne str\nstr: \nint: cmp rax, 0\njz fin{index}\n{e2}\nfin{index}"
+        return f"{e1}\ncmp {te}, 0\nje int\ncmp {te} 1\nje point\njne str\npoint: mov eax, [rax]\ntest eax, eax\njz fin{index}\n{b}\njmp debut{index}\nstr: \nint :cmp rax,0\njz fin{index}\n{b}\nfin{index}:\n"
     else :
         raise Exception("Not implemented")
 
