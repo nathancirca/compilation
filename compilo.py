@@ -15,7 +15,17 @@ CHAR : /["][a-zA-Z0-9]*["]/
 """, start = "prog")
 
 cpt =iter(range(10000))
+<<<<<<< HEAD
 compteur=0
+=======
+index=0
+
+def read_file(file):
+    f = open(file, "r")
+    code = f.read()
+    f.close()
+    return code
+>>>>>>> 9cb203b9fb0fcf57fed1c178f521eb11607c0eca
 
 def pp_variables(vars):
     return ", ".join([t.value for t in vars.children])
@@ -53,6 +63,7 @@ def pp_prg(prog):
     ret = pp_expr(prog.children[2])
     return f"main ({vars}){{{bloc} return ({ret});}}"
 
+<<<<<<< HEAD
 def var_list(ast):
     if isinstance(ast, lark.Token):
         if ast.type == "IDENTIFIANT":
@@ -63,6 +74,21 @@ def var_list(ast):
     for c in ast.children:
         s.update(var_list(c))
     return s
+=======
+
+
+def adresse(expr):
+    if expr.data=="adresse":
+        return f"*{compile_expr(expr.children[0])}"
+    else:
+        return compile_expr(expr)
+
+def pointer(expr):
+    if expr.data=="pointer":
+        return f"*{compile_expr(expr.children[0])}"
+    else:
+        return compile_expr(expr)
+>>>>>>> 9cb203b9fb0fcf57fed1c178f521eb11607c0eca
 
 def type(expr):
     if expr.data =="variable":
@@ -264,6 +290,11 @@ def compile(prg):
 prg = grammaire.parse("main(X,Y) {while(X){X=X-1;Y=Y+1;}return(Y+1);}")
 print(compile(prg))
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 9cb203b9fb0fcf57fed1c178f521eb11607c0eca
 
 
 
