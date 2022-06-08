@@ -1,9 +1,6 @@
-main(first)
-{   p=malloc(8);
-    *p=0;
-    first=0;
-    counter=0; 
-    second=1;
-    next=3;
+main(next,p)
+{   
+    p=malloc(8);
+    next=next+3;
     return(next);
 }

@@ -144,10 +144,11 @@ def compile(prg):
     with open("moule.asm",) as f:
         code = f.read()
         var_decl="\n".join([f"{v} : dq 0" for v in var_list(prg)])
-        code=code.replace("VAR_INIT",var_decl)
+        code = code.replace("VAR_DECL", var_decl)
+        #code=code.replace("VAR_INIT",var_decl)
         code=code.replace("RETURN",compile_expr(prg.children[2]))
         code=code.replace("BODY",compile_bloc(prg.children[1]))
-        code=code.replace("INIT",compile_variables(prg.children[0]))
+        code=code.replace("VAR_INIT",compile_variables(prg.children[0]))
         g = open("demo.asm", "w")
         g.write(code)
         g.close()
@@ -162,7 +163,7 @@ def compile(prg):
 def compile_variables(ast):
     s=""
     for i in range(len(ast.children)):
-        s+= f"mov rbx,[rbp-0x10\nmov rdi,[rbx-{8*(i+1)}]\ncall atoi mov [{ast.children[i].value}],rax\n"
+        s+= f"mov rbx,[rbp-0x10]\nmov rdi,[rbx-{8*(i+1)}]\ncall atoi \nmov [{ast.children[i].value}],rax\n"
     return s
 
 def compile_cmd(cmd):
@@ -191,9 +192,9 @@ def compile_bloc(bloc):
 
 def compile_expr(expr):
     if expr.data == "variable":
-        return f"mov rax,[{expr.children[0].value}]"
+        return f"\nmov rax,[{expr.children[0].value}]"
     elif expr.data=="nombre":
-        return f"mov rax,{expr.children[0].value}"
+        return f"\nmov rax,{expr.children[0].value}"
     elif expr.data=="binexpr":
         e1=compile_expr(expr.children[0])
         e2=compile_expr(expr.children[2])

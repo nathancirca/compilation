@@ -2,7 +2,8 @@ extern printf, atoi
 global main
 section .data
 fmt: db "%d", 10, 0
-
+next : dq 0
+p : dq 0
 
 section .text
 main:
@@ -11,25 +12,29 @@ main:
   push rdi
   push rsi
 
-first : dq 0
-p : dq 0
-next : dq 0
-counter : dq 0
-second : dq 0
+mov rbx,[rbp-0x10]
+mov rdi,[rbx-8]
+call atoi 
+mov [next],rax
+mov rbx,[rbp-0x10]
+mov rdi,[rbx-16]
+call atoi 
+mov [p],rax
+
 mov edi,8
 extern malloc
 call malloc
 mov [p],rax
-mov rax,0
-mov [p],rax
-mov rax,0
-mov [first],rax
-mov rax,0
-mov [counter],rax
-mov rax,1
-mov [second],rax
+
+mov rax,3
+push rax
+ 
+mov rax,[next]
+pop rbx
+add rax,rbx 
 mov rax,3
 mov [next],rax
+
 mov rax,[next]
 
   mov rdi, fmt
