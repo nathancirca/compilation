@@ -2,8 +2,8 @@ import lark
 
 grammaire = lark.Lark("""
 variables : IDENTIFIANT ("," IDENTIFIANT)*
-expr : IDENTIFIANT -> variable | NUMBER -> nombre | CHAR -> chaine | expr OP expr ->binexpr| "(" expr ")" -> parenexpr | "len" "(" expr ")" -> len | IDENTIFIANT".charAt" "(" expr ")" -> charat | expr "==" expr -> isequal
-cmd : IDENTIFIANT "=" expr ";" -> assignment | "while" "(" expr ")" "{" bloc "}" -> while | "if" "(" expr ")" "{" bloc "}" -> if | "printf" "(" expr ")" ";" -> printf | IDENTIFIANT".setcharAt" "(" expr "," expr ")" ";"-> setcharat
+expr : IDENTIFIANT -> variable | NUMBER -> nombre | CHAR -> chaine | expr OP expr ->binexpr| "(" expr ")" -> parenexpr | "len" "(" expr ")" -> len | IDENTIFIANT".charAt" "(" expr ")" -> charat | expr "==" expr -> isequal|"*" expr -> pointer|"&" IDENTIFIANT -> adresse| "malloc" "(" NUMBER ")" -> malloc
+cmd : IDENTIFIANT "=" expr ";" -> assignment | "while" "(" expr ")" "{" bloc "}" -> while | "if" "(" expr ")" "{" bloc "}" -> if | "printf" "(" expr ")" ";" -> printf | IDENTIFIANT".setcharAt" "(" expr "," expr ")" ";"-> setcharat|"*" IDENTIFIANT "=" expr ";"-> pointer |IDENTIFIANT "=" "malloc" "(" NUMBER ")" ";"-> malloc
 bloc : (cmd)*
 prog : "main" "(" variables ")" "{" bloc "return" "(" expr ")" ";" "}"
 NUMBER : /[0-9]+/
@@ -45,8 +45,16 @@ def pp_expr(expr):
         e1 = pp_expr(expr.children[0])
         e2 = pp_expr(expr.children[1])
         return f"{e1} == {e2}"
+    elif expr.data=="pointer":
+        return f"*{pp_expr(expr.children[0])}"
+    elif expr.data=="adresse":
+        return f"&{expr.children[0].value}"
+    elif expr.data=="malloc":
+        return f"malloc({expr.children[0].value})"
     else :
         raise Exception("Not implemented")
+
+    
 def pp_cmd(cmd):
     if cmd.data == "assignment":
         lhs = cmd.children[0].value
@@ -63,8 +71,22 @@ def pp_cmd(cmd):
         e1 = pp_expr(cmd.children[1])
         e2 = pp_expr(cmd.children[2])
         return f"{v}.setcharAt( {e1} , {e2} )"
+    elif cmd.data=="pointer":
+        lhs= cmd.children[0].value
+        rhs=pp_expr(cmd.children[1])
+        return f"*{lhs}={rhs};"
+    elif cmd.data=="adresse":
+        lhs= cmd.children[0].value
+        rhs=pp_expr(cmd.children[1])
+        return f"&{lhs}={rhs};"
+    elif cmd.data=="malloc":
+        lhs= cmd.children[0].value
+        rhs=pp_expr(cmd.children[1])
+        return f"{lhs}={rhs};"
     else :
         raise Exception("Not implemented")
+
+    
 def pp_bloc(bloc):
     return "\n".join([pp_cmd(t) for t in bloc.children])
 
@@ -132,6 +154,32 @@ def var_list(ast):
     for c in ast.children:
         s.update(var_list(c))
     return s
+
+def type_assign(expr,lhs):
+    if expr.data == "variable":
+        return f"mov [{lhs}_type], [{expr.children[0].value}_type]"
+    elif expr.data == "nombre" or expr.data=="adresse":
+        return f"mov rcx,0\nmov [{lhs}_type], rcx"
+    elif expr.data == "pointer" or expr.data=="malloc":
+        return f"mov rcx,1\nmov [{lhs}_type], rcx"
+    elif expr.data =="chaine":
+        return f"mov rcx,2\nmov [{lhs}_type], rcx"
+    elif expr.data == "binexpr":
+        t1 = type(expr.children[0])
+        t2 = type(expr.children[2])
+        if expr.children[1] == "+":
+            if (t1=="2" or t2=="2"):
+                return f"mov rcx,2\nmov [{lhs}_type], rcx"
+            elif (t1=="1" or t2=="1"):
+                return f"mov rcx,1\nmov [{lhs}_type], rcx"
+            else :
+                return f"mov rcx,0\nmov [{lhs}_type], rcx"
+    elif expr.data == "parenexpr":
+        return type_assign(expr.chidlren[0])
+    else :
+        raise Exception("Not implemented")
+
+
 
 def compile_expr(expr):
     global index
@@ -201,40 +249,17 @@ def compile_expr(expr):
     elif expr.data == "charat":
         v = expr.children[0].value
         e = expr.children[1].children[0].value
-        return f"mov rax, [{v} - {e}]\n"
+        return f"movsx rax, [{v} - {e}]\n"
+    elif expr.data=="pointer":
+        return f"\nmov rax,QWORD [rbp+8]\nmov QWORD [rax],{expr.children[1].value}\npop rbp"
+        #return f"\npush rbp\nmov rbp,rsp\nmov rax,QWORD [rbp+8]\nmov QWORD [rax],{expr.children[1].value}\npop rbp"
+    elif expr.data=="adresse":
+        return f"\npush rbp\nmov rbp,rsp\nmov QWORD [rbp], {expr.children[0]}\nlea rax,[rbp]\nmov QWORD [rbp],rax\npop rbp"
+    elif expr.data=="malloc":
+        return f"mov edi,{expr.children[0].value}\nextern malloc\ncall malloc"
     else:
         raise Exception("Not implemented")
     
-
-def type_assign(expr,lhs):
-    if expr.data == "variable":
-        return f"mov rcx, [{expr.children[0].value}_type]\nmov [{lhs}_type], rcx"
-    elif expr.data == "nombre":
-        return f"mov rcx, 0\nmov [{lhs}_type], rcx"
-    elif expr.data == "pointer":
-        return f"mov rcx, 1\nmov [{lhs}_type], rcx"
-    elif expr.data =="chaine":
-        return f"mov rcx, 2\nmov [{lhs}_type], rcx"
-    elif expr.data == "binexpr":
-        t1 = type(expr.children[0])
-        t2 = type(expr.children[2])
-        if expr.children[1] == "+":
-            if (t1=="2" or t2=="2"):
-                return f"mov rcx, 2\nmov [{lhs}_type], rcx"
-            elif (t1=="1" or t2=="1"):
-                return f"mov rcx, 2\nmov [{lhs}_type], rcx"
-            else :
-                return f"mov rcx, 0\nmov [{lhs}_type], rcx"
-    elif expr.data == "parenexpr":
-        return type_assign(expr.children[0])
-    elif expr.data == "len":
-        return f"mov rcx, 0\nmov [{lhs}_type], rcx"
-    elif expr.data == "isequal":
-        return f"mov rcx, 0\nmov [{lhs}_type], rcx"
-    elif expr.data == "charat":
-        return f"mov rcx, 2\nmov [{lhs}_type], rcx"
-    else :
-        raise Exception("Not implemented")
 
 def compile_cmd(cmd):
     global index
@@ -292,6 +317,8 @@ def compile_cmd(cmd):
                 raise Exception ("Too long string")
     else :
         raise Exception("Not implemented")
+
+
 def compile_bloc(bloc):
     return "\n".join([compile_cmd(t) for t in bloc.children])
 
@@ -308,14 +335,15 @@ def compile(prg):
         code = code.replace("VAR_DECL", var_decl)
         code = code.replace("RETURN",compile_expr(prg.children[2]))
         code = code.replace("BODY", compile_bloc(prg.children[1]))
-        code = code.replace("INIT", compile_vars(prg.children[0]))
+        code = code.replace("VAR_INIT", compile_vars(prg.children[0]))
         g = open("demo.asm", "w")
         g.write(code)
         g.close()
         return code
 
-prg = grammaire.parse("""main(X,Y,E) {X = "abcdef"; Y = "abcdef"; E = X+Y; return(E);}""")
-print(compile(prg))
+#prg = grammaire.parse("""main(X) {X = "abcdef"; X.setcharAt( 3 ,"b"); return(X);}""")
+#print(compile(prg))
+
 def gamma_expr(expr):
     if expr.data == "nombre":
         return "mov rax,"+str(expr.children[0].value)
@@ -345,3 +373,6 @@ def gamma_expr(expr):
     elif expr.data=="parenexpr":
         return gamma_expr(expr.children[0])
 
+prg=grammaire.parse(read_file("test.txt"))
+print(pp_prg(prg))
+compile(prg)
