@@ -3,11 +3,12 @@ Dans ce projet, nous avons choisi de traiter trois fonctionnalités différentes
 
 <h2>Les pointeurs</h2>
 En ce qui concerne les pointeurs, les operations qui sont possibles sont l'allocation de l'espace mémoire avec malloc et la possiblilité d'acceder a l'adresse d'une variable avec &. Cependant, il n'est pas encore possible d'utiliser des double pointeurs. De plus, il n'est pas possible de faire: 
-var=2 p=&var w=*p return(w) car ceci renvoit une valeur différente de 2.
-Le fichier pour tester les pointeurs est le fichier test.txt. Il faut lancer les commandes suivantes:
-compilo.py
-nasm -f elf64 demo.asm
-gcc -o main -no-pie -fno-pie demo.o
+var=2<br> p=&var<br> w=*p<br> return(w)<br> car ceci renvoit une valeur différente de 2.<br><br>
+
+Le fichier pour tester les pointeurs est le fichier test.txt. Il faut lancer les commandes suivantes:<br>
+compilo.py<br>
+nasm -f elf64 demo.asm<br>
+gcc -o main -no-pie -fno-pie demo.o<br>
 ./main 8
 
 
