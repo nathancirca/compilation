@@ -1,4 +1,4 @@
-extern printf, atoi
+extern printf, atoi, itoa, len_concat
 global main
 section .data
 fmt: db "%d", 10, 0

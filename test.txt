@@ -1,7 +1,8 @@
-main(a)
+main(X)
 {   
-    q=malloc(8);
-    var=2;
-    q=&var;
-    return(q);
+    X=0;
+    if(X){
+        printf(12);
+    }
+    return(X);
 }
