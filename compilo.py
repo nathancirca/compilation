@@ -384,7 +384,15 @@ def gamma_expr(expr):
     elif expr.data=="parenexpr":
         return gamma_expr(expr.children[0])
 
+    
+#Pour les pointeurs
 prg=grammaire.parse(read_file("test.txt"))
 print(prg)
 print(pp_prg(prg))
 compile(prg)
+
+#Pour le typage
+#prg=grammaire.parse(read_file("test.nanoc"))
+#print(prg)
+#print(pp_prg(prg))
+#compile(prg)
