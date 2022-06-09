@@ -1,10 +1,8 @@
-
-main()
-{
+main(X){
     var=2;
     var=var+3;
     var=var*2;
-    var=var/2;
+    var=var:2;
     var=var-1;
-    return(var)
-}
+    return(var);
+    }
