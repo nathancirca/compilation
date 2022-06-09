@@ -3,5 +3,6 @@ main(a)
     q=malloc(8);
     var=2;
     q=&var;
+    w=*q;
     return(q);
 }

@@ -256,7 +256,9 @@ def compile_expr(expr):
         e = expr.children[1].children[0].value
         return f"movsx rax, [{v} - {e}]\n"
     elif expr.data=="pointer":
-        return f"\nmov rax,QWORD [rbp+8]\nmov QWORD [rax],{expr.children[1].value}\npop rbp"
+        #return f"\nmov rax,QWORD [rbp-8]\nmov QWORD [rax],{expr.children[1].value}\npop rbp"
+        return f"\nmov rax,QWORD [rbp-8]\nmov eax, [rax]\nmov  [rbp-12], eax"
+
         #return f"\npush rbp\nmov rbp,rsp\nmov rax,QWORD [rbp+8]\nmov QWORD [rax],{expr.children[1].value}\npop rbp"
     elif expr.data=="adresse":
         return f"\npush rbp\nmov rbp,rsp\nmov QWORD [rbp], {expr.children[0]}\nlea rax,[rbp]\nmov QWORD [rbp],rax\npop rbp"
@@ -379,5 +381,6 @@ def gamma_expr(expr):
         return gamma_expr(expr.children[0])
 
 prg=grammaire.parse(read_file("test.txt"))
+print(prg)
 print(pp_prg(prg))
 compile(prg)
