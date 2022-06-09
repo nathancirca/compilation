@@ -175,7 +175,13 @@ def type_assign(expr,lhs):
             else :
                 return f"mov rcx,0\nmov [{lhs}_type], rcx"
     elif expr.data == "parenexpr":
-        return type_assign(expr.chidlren[0])
+        return type_assign(expr.children[0])
+    elif expr.data == "isequal":
+        return f"mov rcx, 0\nmov [{lhs}_type], rcx"
+    elif expr.data == "charat":
+        return f"mov rcx, 2\nmov [{lhs}_type], rcx"
+    elif expr.data == "len":
+        return f"mov rcx, 0\nmov [{lhs}_type], rcx"
     else :
         raise Exception("Not implemented")
 
@@ -204,8 +210,7 @@ def compile_expr(expr):
             long2 = len(str(exp2.children[0].value))
 
             return f"""{e1}\npush rax\n{e2}\npop rbx\nmov rcx, {type(exp1)}\nmov rdx,{type(exp2)}\n\
-                cmp rcx, rdx\nje eqadd{index}\njne neqadd{index}\neqadd{index}: cmp rcx, 0\nje intadd{index}\ncmp rcx, 1\nje pointadd{index}\njne stradd{index}\nstradd{index}: lea rax, {exp1.children[0].value}\nmov rdi, rax\ncall strlen\nmov r15d, eax\nlea rax, {exp2.children[0].value}\nmov rdi, rax\ncall strlen\nmov r14d, eax\nmov edx, r15d\nmov eax, r14d\nadd eax, edx\nmovsx rdx, eax\nsub rdx, 1\nmov r13, rdx\nmovsx rdx, eax\ncdqe\nmov edx, 16\nsub rdx, 1\nadd rax, rdx\nmov esi, 16\nmov edx, 0\ndiv rsi\nimul rax, rax, 16\nsub rsp, rax\nmov rax, rsp\nadd rax, 0\nmov r13, rax\nmov r12d, 0\jmp debut_sadds{index-4}\ndebut_sadds{index-1}\nmov eax, r12d\ncmp eax, r10d\njge debut_sadds{index-3}\nmov eax, r10d\ncdqe\nmovzx ecx, 
-                \njmp fin{index}\npointadd{index}:\nadd rax,rbx\njmp fin{index}\nintadd{index}:\n add rax, rbx\njmp fin{index}\n\
+                cmp rcx, rdx\nje eqadd{index}\njne neqadd{index}\neqadd{index}: cmp rcx, 0\nje intadd{index}\ncmp rcx, 1\nje pointadd{index}\njne stradd{index}\nstradd{index}: lea rax, {exp1.children[0].value}\nmov rdi, rax\ncall strlen\nmov r15d, eax\nlea rax, {exp2.children[0].value}\nmov rdi, rax\ncall strlen\nmov r14d, eax\nmov edx, r15d\nmov eax, r14d\nadd eax, edx\nmovsx rdx, eax\nsub rdx, 1\nmov r13, rdx\nmovsx rdx, eax\ncdqe\nmov edx, 16\nsub rdx, 1\nadd rax, rdx\nmov esi, 16\nmov edx, 0\ndiv rsi\nimul rax, rax, 16\nsub rsp, rax\nmov rax, rsp\nadd rax, 0\nmov r13, rax\nmov r12d, 0\jmp debut_sadds{index-4}\ndebut_sadds{index-1}\nmov eax, r12d\ncmp eax, r10d\njge sadds{index-3}\nmov eax, r10d\ncdqe\nmovzx ecx, [{exp1.children[0].value}+rax]\nmov rdx, r13\nmov eax, r12d\ncdqe\nmov [rdx+rax], cl\njmp saads{index-3}\nmov edx, r10d\nmov eax, r12d\nlea esi, [rdx+rax]\nmov eax, r12d\ncdqe\nmovzx ecx [{exp2.children[0].value}+rax]\nmov rdx r13\nmovsx rax, esi\nmov [rdx+rax], cl\njmp sadds{index-2}\nsadds{index-2}:\nadd r12d, 1\nsadds{index-4}:\nmov edx, r10d\nmov eax, r11d\nadd eax, edx\ncmp r12d, eax\njl {index-1}\nmov rax, r13\njmp fin{index}\npointadd{index}:\nadd rax,rbx\njmp fin{index}\nintadd{index}:\n add rax, rbx\njmp fin{index}\n\
                 neqadd{index}: cmp rcx, 0\nje i1{index}\njne cp1{index}\ni1{index}: cmp rdx, 1\nje iaddp{index}\njne iadds{index}\n
                 cp1{index}: cmp rcx, 1\nje p1{index}\njne cs1{index}\np1{index}: cmp rdx, 0\nje iaddp{index}\njne fin{index}\n
                 cs1{index}: cmp rdx, 0\nje saddi{index}\njne fin{index}\n
