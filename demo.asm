@@ -2,6 +2,8 @@ extern printf, atoi
 global main
 section .data
 fmt: db "%d", 10, 0
+w: dq 0
+w_type: dq 0
 var: dq 0
 var_type: dq 0
 a: dq 0
@@ -42,6 +44,13 @@ pop rbp
 mov rcx,0
 mov [q_type], rcx
 mov [q],rax
+
+mov rax,QWORD [rbp-8]
+mov eax, [rax]
+mov  [rbp-12], eax
+mov rcx,1
+mov [w_type], rcx
+mov [w],rax
 mov rax, [q]
 
   mov rdi, fmt
