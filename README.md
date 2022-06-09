@@ -2,7 +2,7 @@
 Dans ce projet, nous avons choisi de traiter trois fonctionnalités différentes: les pointeurs, les chaines de caracteres et le typage python.
 
 <h2>Les pointeurs</h2>
-En ce qui concerne les pointeurs, les operations qui sont possibles sont l'allocation de l'espace mémoire avec malloc et la possiblilité d'acceder a l'adresse d'une variable avec &. Cependant, il n'est pas encore possible d'utiliser des double pointeurs.
+En ce qui concerne les pointeurs, les operations qui sont possibles sont l'allocation de l'espace mémoire avec malloc et la possiblilité d'acceder a l'adresse d'une variable avec &. Cependant, il n'est pas encore possible d'utiliser des double pointeurs. 
 Le fichier pour tester les pointeurs est le fichier test.txt. Il faut lancer les commandes suivantes:
 compilo.py
 nasm -f elf64 demo.asm
