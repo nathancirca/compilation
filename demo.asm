@@ -1,11 +1,22 @@
-extern printf, atoi
+extern printf, atoi, itoa, len_concat
 global main
 section .data
 fmt: db "%d", 10, 0
-Y: dq 0
-Y_type: dq 0
+<<<<<<< HEAD
 X: dq 0
 X_type: dq 0
+Y: dq 0
+Y_type: dq 0
+=======
+w: dq 0
+w_type: dq 0
+var: dq 0
+var_type: dq 0
+a: dq 0
+a_type: dq 0
+q: dq 0
+q_type: dq 0
+>>>>>>> eac9d7ce1430c4b51092fcbbe38e1330d0adb3cf
 
 section .text
 main:
@@ -14,193 +25,106 @@ main:
   push rdi
   push rsi
 
-mov rbx, [rbp-0x10]
-mov rdi,[rbx-8]
+
+mov rbx, [rbp+0x10]
+mov rdi,[rbx+8]
 call atoi
 mov [X],rax
-mov rbx, [rbp-0x10]
-mov rdi,[rbx-16]
-call atoi
-mov [Y],rax
 
-debut11:mov rax, [X]
-cmp [X_type], 0
-je int
-cmp [X_type], 1
-je point
-jne str
-point: mov eax, [rax]
-test eax, eax
-jz fin11
+mov edi,8
+extern malloc
+call malloc
+mov rcx,1
+mov [X_type], rcx
+mov [X],rax
+mov edi,8
+extern malloc
+call malloc
+mov rcx,1
+mov [Y_type], rcx
+mov [Y],rax
 mov rax, [X]
 push rax
-mov rax,1
-push rbx
-pop rax
-pop rbx
-                cmp [X_type], 0
-je eq7
-jne fin7
-eq7: cmp [X_type], 2
-je fin7
-sub rax, rbx
-jmp fin7
-fin7:
-None
-mov [X],rax
 mov rax, [Y]
-push rax
-mov rax,1
-push rbx
-pop rax
 pop rbx
-                cmp [Y_type], 0
-je eqadd10
-jne neqadd10
-eqadd10: cmp [Y_type], 0
-je intadd10
-cmp [Y_type], 1
-je pointadd10
-jne stradd10
-stradd10: 
-jmp fin
-pointadd10: add rax,rbx
-jmp fin10
-intadd10: add rax, rbx
-jmp fin10
-                neqadd10: cmp [Y_type], 0
-je i110
-jne cp110
-i110: cmp 0, 1
-je iaddp10
-jne iadds10
-                cp110: cmp [Y_type], 1
-je p110
-jne cs110
-p110: cmp 0, 0
-je iaddp10
-jne padds10
-                cs110: cmp 0, 0
-je iadds10
-jne padds10
-                iaddp10: add rax,rbx
-jmp fin10
-                iadds10: 
-jmp fin10
-                padds10: 
-jmp fin10
-fin10:
-mov [Y_type], 0
-mov [Y],rax
-jmp debut11
-str: 
-int :cmp rax,0
-jz fin11
-mov rax, [X]
-push rax
-mov rax,1
-push rbx
-pop rax
-pop rbx
-                cmp [X_type], 0
-je eq7
-jne fin7
-eq7: cmp [X_type], 2
-je fin7
-sub rax, rbx
-jmp fin7
-fin7:
-None
-mov [X],rax
-mov rax, [Y]
-push rax
-mov rax,1
-push rbx
-pop rax
-pop rbx
-                cmp [Y_type], 0
-je eqadd10
-jne neqadd10
-eqadd10: cmp [Y_type], 0
-je intadd10
-cmp [Y_type], 1
-je pointadd10
-jne stradd10
-stradd10: 
-jmp fin
-pointadd10: add rax,rbx
-jmp fin10
-intadd10: add rax, rbx
-jmp fin10
-                neqadd10: cmp [Y_type], 0
-je i110
-jne cp110
-i110: cmp 0, 1
-je iaddp10
-jne iadds10
-                cp110: cmp [Y_type], 1
-je p110
-jne cs110
-p110: cmp 0, 0
-je iaddp10
-jne padds10
-                cs110: cmp 0, 0
-je iadds10
-jne padds10
-                iaddp10: add rax,rbx
-jmp fin10
-                iadds10: 
-jmp fin10
-                padds10: 
-jmp fin10
-fin10:
-mov [Y_type], 0
-mov [Y],rax
-jmp debut11
-fin11:
+mov rcx, [X_type]
+mov rdx,[Y_type]
+                cmp rcx, rdx
+je eqadd32
+jne neqadd32
+eqadd32: cmp rcx, 0
+je intadd32
+cmp rcx, 1
+je pointadd32
+jne stradd32
+stradd32: 
+jmp fin32
+pointadd32:
+add rax,rbx
+jmp fin32
+intadd32:
+ add rax, rbx
+jmp fin32
+                neqadd32: cmp rcx, 0
+je i132
+jne cp132
+i132: cmp rdx, 1
+je iaddp32
+jne iadds32
 
-mov rax, [Y]
-push rax
-mov rax,1
-push rbx
-pop rax
-pop rbx
-                cmp [Y_type], 0
-je eqadd3
-jne neqadd3
-eqadd3: cmp [Y_type], 0
-je intadd3
-cmp [Y_type], 1
-je pointadd3
-jne stradd3
-stradd3: 
-jmp fin
-pointadd3: add rax,rbx
-jmp fin3
-intadd3: add rax, rbx
-jmp fin3
-                neqadd3: cmp [Y_type], 0
-je i13
-jne cp13
-i13: cmp 0, 1
-je iaddp3
-jne iadds3
-                cp13: cmp [Y_type], 1
-je p13
-jne cs13
-p13: cmp 0, 0
-je iaddp3
-jne padds3
-                cs13: cmp 0, 0
-je iadds3
-jne padds3
-                iaddp3: add rax,rbx
-jmp fin3
-                iadds3: 
-jmp fin3
-                padds3: 
-jmp fin3
-fin3:
+                cp132: cmp rcx, 1
+je p132
+jne cs132
+p132: cmp rdx, 0
+je iaddp32
+jne fin32
+
+                cs132: cmp rdx, 0
+je saddi32
+jne fin32
+
+                iaddp32: add rax,rbx
+jmp fin32
+
+                iadds32: 
+   
+                saddi32: 
+
+                fin32:
+mov rcx,[X_type]
+mov rdx, [Y_type]
+cmp rcx,2
+je tstr33
+cmp rdx, 2
+je tstr33
+cmp rcx,1
+je tpnt33
+cmp rdx, 1
+je tpnt33
+mov rcx,0
+<<<<<<< HEAD
+mov [X_type], rcx
+jmp fin33
+tstr33: mov rcx,1
+mov [X_type], rcx
+jmp fin33
+tpnt33: mov rcx,0
+mov [X_type], rcx
+fin33:
+mov [X],rax
+mov rax, [X]
+=======
+mov [q_type], rcx
+mov [q],rax
+
+mov rax,QWORD [rbp-8]
+mov eax, [rax]
+mov  [rbp-12], eax
+mov rcx,1
+mov [w_type], rcx
+mov [w],rax
+mov rax, [q]
+>>>>>>> eac9d7ce1430c4b51092fcbbe38e1330d0adb3cf
 
   mov rdi, fmt
   mov rsi, rax
