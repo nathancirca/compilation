@@ -15,3 +15,4 @@ gcc -o main -no-pie -fno-pie demo.o
 
 
 <h2>Typage python</h2>
+Le typage devrait être prêt à accueuillir les pointeurs et les chaines de caractères mais des erreurs persistent quand on utilise nasm à cause des labels, si bien qu'une addition d'entiers ne fonctionne pas. L'erreur est "label changed during code generation" et elle apparait lors de l'utilisation de nasm pour des dizaines de labels dans le cas de l'addition.
