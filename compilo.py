@@ -2,8 +2,8 @@ import lark
 
 grammaire = lark.Lark("""
 variables : IDENTIFIANT ("," IDENTIFIANT)*
-expr : IDENTIFIANT -> variable | NUMBER -> nombre | CHAR -> chaine | expr OP expr ->binexpr| "(" expr ")" -> parenexpr | "len" "(" expr ")" -> len | IDENTIFIANT".charAt" "(" expr ")" -> charat | expr "==" expr -> isequal
-cmd : IDENTIFIANT "=" expr ";" -> assignment | "while" "(" expr ")" "{" bloc "}" -> while | "if" "(" expr ")" "{" bloc "}" -> if | "printf" "(" expr ")" ";" -> printf | IDENTIFIANT".setcharAt" "(" expr "," expr ")" ";"-> setcharat
+expr : IDENTIFIANT -> variable | NUMBER -> nombre | CHAR -> chaine | expr OP expr ->binexpr| "(" expr ")" -> parenexpr | "len" "(" expr ")" -> len | IDENTIFIANT".charAt" "(" expr ")" -> charat | expr "==" expr -> isequal|"*" expr -> pointer|"&" IDENTIFIANT -> adresse| "malloc" "(" NUMBER ")" -> malloc
+cmd : IDENTIFIANT "=" expr ";" -> assignment | "while" "(" expr ")" "{" bloc "}" -> while | "if" "(" expr ")" "{" bloc "}" -> if | "printf" "(" expr ")" ";" -> printf | IDENTIFIANT".setcharAt" "(" expr "," expr ")" ";"-> setcharat|"*" IDENTIFIANT "=" expr ";"-> pointer |IDENTIFIANT "=" "malloc" "(" NUMBER ")" ";"-> malloc
 bloc : (cmd)*
 prog : "main" "(" variables ")" "{" bloc "return" "(" expr ")" ";" "}"
 NUMBER : /[0-9]+/
@@ -45,8 +45,16 @@ def pp_expr(expr):
         e1 = pp_expr(expr.children[0])
         e2 = pp_expr(expr.children[1])
         return f"{e1} == {e2}"
+    elif expr.data=="pointer":
+        return f"*{pp_expr(expr.children[0])}"
+    elif expr.data=="adresse":
+        return f"&{expr.children[0].value}"
+    elif expr.data=="malloc":
+        return f"malloc({expr.children[0].value})"
     else :
         raise Exception("Not implemented")
+
+    
 def pp_cmd(cmd):
     if cmd.data == "assignment":
         lhs = cmd.children[0].value
@@ -63,8 +71,22 @@ def pp_cmd(cmd):
         e1 = pp_expr(cmd.children[1])
         e2 = pp_expr(cmd.children[2])
         return f"{v}.setcharAt( {e1} , {e2} )"
+    elif cmd.data=="pointer":
+        lhs= cmd.children[0].value
+        rhs=pp_expr(cmd.children[1])
+        return f"*{lhs}={rhs};"
+    elif cmd.data=="adresse":
+        lhs= cmd.children[0].value
+        rhs=pp_expr(cmd.children[1])
+        return f"&{lhs}={rhs};"
+    elif cmd.data=="malloc":
+        lhs= cmd.children[0].value
+        rhs=pp_expr(cmd.children[1])
+        return f"{lhs}={rhs};"
     else :
         raise Exception("Not implemented")
+
+    
 def pp_bloc(bloc):
     return "\n".join([pp_cmd(t) for t in bloc.children])
 
@@ -228,6 +250,13 @@ def compile_expr(expr):
         v = expr.children[0].value
         e = expr.children[1].children[0].value
         return f"movzx rax, [{v} - {e}]\n"
+    elif expr.data=="pointer":
+        return f"\nmov rax,QWORD [rbp+8]\nmov QWORD [rax],{expr.children[1].value}\npop rbp"
+        #return f"\npush rbp\nmov rbp,rsp\nmov rax,QWORD [rbp+8]\nmov QWORD [rax],{expr.children[1].value}\npop rbp"
+    elif expr.data=="adresse":
+        return f"\npush rbp\nmov rbp,rsp\nmov QWORD [rbp], {expr.children[0]}\nlea rax,[rbp]\nmov QWORD [rbp],rax\npop rbp"
+    elif expr.data=="malloc":
+        return f"mov edi,{expr.children[0].value}\nextern malloc\ncall malloc"
     else:
         raise Exception("Not implemented")
     
@@ -318,6 +347,8 @@ def compile_cmd(cmd):
                 raise Exception ("Too long string")
     else :
         raise Exception("Not implemented")
+
+
 def compile_bloc(bloc):
     return "\n".join([compile_cmd(t) for t in bloc.children])
 
@@ -339,6 +370,7 @@ def compile(prg):
 
 prg = grammaire.parse("""main(X) {X = "abcdef"; X.setcharAt( 3 ,"b"); return(X);}""")
 print(compile(prg))
+
 def gamma_expr(expr):
     if expr.data == "nombre":
         return "mov rax,"+str(expr.children[0].value)
