@@ -15,10 +15,7 @@ CHAR : /["][a-zA-Z0-9]*["]/
 """, start = "prog")
 
 cpt =iter(range(10000))
-compteur=0
 index=0
-compteur=0
-
 def read_file(file):
     f = open(file, "r")
     code = f.read()
@@ -108,7 +105,7 @@ def type(expr):
         return "0"
     elif expr.data=="pointer":
         return "1"
-    elif expr.data=="string":
+    elif expr.data=="chaine":
         return "2"
     elif expr.data == "binexpr":
         t1=type(expr.children[0])
@@ -133,7 +130,7 @@ def type_assign(expr,lhs):
         return f"mov rcx,0\nmov [{lhs}_type], rcx"
     elif expr.data == "pointer":
         return f"mov rcx,1\nmov [{lhs}_type], rcx"
-    elif expr.data =="string":
+    elif expr.data =="chaine":
         return f"mov rcx,2\nmov [{lhs}_type], rcx"
     elif expr.data == "binexpr":
         t1 = type(expr.children[0])
@@ -165,9 +162,7 @@ def var_list(ast):
 
 def compile_expr(expr):
     global index
-    global compteur
-    print(index)
-    index+=1
+    index+=5
     if expr.data == "variable":
         return f"mov rax, [{expr.children[0].value}]"
     elif expr.data == "nombre":
@@ -184,7 +179,6 @@ def compile_expr(expr):
         e1 = compile_expr(exp1)
         e2 = compile_expr(exp2)
         if expr.children[1] == "+":
-            compteur+=4
             long1 = len(str(exp1.children[0].value))
             long2 = len(str(exp2.children[0].value))
 
@@ -194,8 +188,8 @@ def compile_expr(expr):
                 cp1{index}: cmp rcx, 1\nje p1{index}\njne cs1{index}\np1{index}: cmp rdx, 0\nje iaddp{index}\njne fin{index}\n
                 cs1{index}: cmp rdx, 0\nje saddi{index}\njne fin{index}\n
                 iaddp{index}: add rax,rbx\njmp fin{index}\n
-                iadds{index}: lea rax, {exp1.children[0].value}\nmov rbx, {exp1.children[0].value}\nmov edx, 8\nmov rsi, rax\nmov edi, rbx\nmov ebx, 0\ncall itoa\nmov edx, {long1}\nmov ebx, {long2}\nadd edx, ebx\nmovsx rdx, ebx\nsub rdx, 1\nmov len_concat, rdx\nmovsx rdx, ebx\nmov r10, rdx\nmov r11d, 0\nmovsx rdx, ebx\nmov r8, rdx\nmov e9d, 0\ncdqe\nmov edx, 16\nsub rdx, 1\nadd rbx, rdx\nmov esi, 16\nmov edx, 0\ndiv rsi\nimul rbx, rbx, 16\nsub rsp, rbx\nmov rbx, rsp\nadd rbx, 0\nmov rax, rbx\nmov i, 0\njmp debut{compteur-3}\ndebut{compteur}:\nmov eax, i\ncdqe\ncmp rbx, 6\nja debut{compteur-2}\nmov ebx, i\ncdqe\nmovzx ecx, [{exp1.children[0].value}+rbx]\nmov rdx, rax\nmov eax, i\ncdqe\nmov [rdx+rbx], cl\njmp debut{compteur-1}\nfin{compteur}:\ndebut{compteur-1}:\nadd i, 1\nfin{compteur-1}:\ndebut{compteur-3}:\nmov ebx, rax\ncmp eax, len_concat\njl debut{compteur}\nmov rsp rsi\nfin{compteur-3}:\ndebut{compteur-2}:\nmov ebx, rax\ncdqe\nmovzx ecx, [{exp2.children[0].value}+rbx]\nmov rdx, rax\nmov eax, i\ncdqe\nmov [rdx+rbx], cl\nfin{compteur-2}:   
-                saddi{index}: lea rax, {exp1.children[0].value}\nmov rbx, {exp1.children[0].value}\nmov edx, 8\nmov rsi, rax\nmov edi, rbx\nmov ebx, 0\ncall itoa\nmov edx, {long1}\nmov ebx, {long2}\nadd edx, ebx\nmovsx rdx, ebx\nsub rdx, 1\nmov len_concat, rdx\nmovsx rdx, ebx\nmov r10, rdx\nmov r11d, 0\nmovsx rdx, ebx\nmov r8, rdx\nmov e9d, 0\ncdqe\nmov edx, 16\nsub rdx, 1\nadd rbx, rdx\nmov esi, 16\nmov edx, 0\ndiv rsi\nimul rbx, rbx, 16\nsub rsp, rbx\nmov rbx, rsp\nadd rbx, 0\nmov rax, rbx\nmov i, 0\njmp debut{compteur-3}\ndebut{compteur}:\nmov eax, i\ncdqe\ncmp rbx, 6\nja debut{compteur-2}\nmov ebx, i\ncdqe\nmovzx ecx, [{exp1.children[0].value}+rbx]\nmov rdx, rax\nmov eax, i\ncdqe\nmov [rdx+rbx], cl\njmp debut{compteur-1}\nfin{compteur}:\ndebut{compteur-1}:\nadd i, 1\nfin{compteur-1}:\ndebut{compteur-3}:\nmov ebx, rax\ncmp eax, len_concat\njl debut{compteur}\nmov rsp rsi\nfin{compteur-3}:\ndebut{compteur-2}:\nmov ebx, rax\ncdqe\nmovzx ecx, [{exp2.children[0].value}+rbx]\nmov rdx, rax\nmov eax, i\ncdqe\nmov [rdx+rbx], cl\nfin{compteur-2}:
+                iadds{index}: lea rax, {exp1.children[0].value}\nmov rbx, {exp1.children[0].value}\nmov edx, 8\nmov rsi, rax\nmov edi, rbx\nmov ebx, 0\ncall itoa\nmov edx, {long1}\nmov ebx, {long2}\nadd edx, ebx\nmovsx rdx, ebx\nsub rdx, 1\nmov len_concat, rdx\nmovsx rdx, ebx\nmov r10, rdx\nmov r11d, 0\nmovsx rdx, ebx\nmov r8, rdx\nmov e9d, 0\ncdqe\nmov edx, 16\nsub rdx, 1\nadd rbx, rdx\nmov esi, 16\nmov edx, 0\ndiv rsi\nimul rbx, rbx, 16\nsub rsp, rbx\nmov rbx, rsp\nadd rbx, 0\nmov rax, rbx\nmov i, 0\njmp debut_iadds{index-4}\ndebut_iadds{index-1}:\nmov eax, i\ncdqe\ncmp rbx, 6\nja debut_iadds{index-3}\nmov ebx, i\ncdqe\nmovzx ecx, [{exp1.children[0].value}+rbx]\nmov rdx, rax\nmov eax, i\ncdqe\nmov [rdx+rbx], cl\njmp debut_iadds{index-2}\nfin_iadds{index-1}:\ndebut_iadds{index-2}:\nadd i, 1\nfin_iadds{index-2}:\ndebut_iadds{index-4}:\nmov ebx, rax\ncmp eax, len_concat\njl debut_iadds{index-1}\nmov rsp, rsi\nfin_iadds{index-4}:\ndebut_iadds{index-3}:\nmov ebx, rax\ncdqe\nmovzx ecx, [{exp2.children[0].value}+rbx]\nmov rdx, rax\nmov eax, i\ncdqe\nmov [rdx+rbx], cl\nfin_iadds{index-3}:   
+                saddi{index}: lea rax, {exp1.children[0].value}\nmov rbx, {exp1.children[0].value}\nmov edx, 8\nmov rsi, rax\nmov edi, rbx\nmov ebx, 0\ncall itoa\nmov edx, {long1}\nmov ebx, {long2}\nadd edx, ebx\nmovsx rdx, ebx\nsub rdx, 1\nmov len_concat, rdx\nmovsx rdx, ebx\nmov r10, rdx\nmov r11d, 0\nmovsx rdx, ebx\nmov r8, rdx\nmov e9d, 0\ncdqe\nmov edx, 16\nsub rdx, 1\nadd rbx, rdx\nmov esi, 16\nmov edx, 0\ndiv rsi\nimul rbx, rbx, 16\nsub rsp, rbx\nmov rbx, rsp\nadd rbx, 0\nmov rax, rbx\nmov i, 0\njmp debut_saddi{index-4}\ndebut_saddu{index-1}:\nmov eax, i\ncdqe\ncmp rbx, 6\nja debut_saddi{index-3}\nmov ebx, i\ncdqe\nmovzx ecx, [{exp1.children[0].value}+rbx]\nmov rdx, rax\nmov eax, i\ncdqe\nmov [rdx+rbx], cl\njmp debut_saddi{index-2}\nfin_saddi{index-1}:\ndebut_saddi{index-2}:\nadd i, 1\nfin_saddi{index-2}:\ndebut_saddi{index-4}:\nmov ebx, rax\ncmp eax, len_concat\njl debut_saddi{index-1}\nmov rsp, rsi\nfin_saddi{index-4}:\ndebut_saddi{index-3}:\nmov ebx, rax\ncdqe\nmovzx ecx, [{exp2.children[0].value}+rbx]\nmov rdx, rax\nmov eax, i\ncdqe\nmov [rdx+rbx], cl\nfin_saddi{index-3}:
                 fin{index}:"""
         elif expr.children[1] == "-":
                 return f"{e1}\npush rax\n{e2}\npop rbx\nmov rcx, {type(exp1)}\nmov rdx,{type(exp2)}\n\
@@ -210,8 +204,8 @@ def compile_expr(expr):
                 cp{index}: cmp rcx, 1\nje p1mul{index}\njne cs{index}\np1mul{index}: cmp rdx, 0\nje imulp{index}\n\
                 cs{index}: cmp rdx, 0\nje smuli{index}\n\
                 imulp{index}: imul rax, rbx\njmp fin{index}\n\
-                imuls{index}: lea rax, {e1}\nmov rdi, rax\ncall strlen\nimul eax, {e2}\nmovsx rdx, eax\nsub rdx, 1\nmov concat, rdx\nmovsx rdx, eax\nmov r8, rdx\nmov r9d, 0\nmovsx rdx, eax\nmov rcx, rdx\nmov ebx, 0\ncdqe\nmov edx, 16\nsub rdx, 1\nadd rax, rdx\nmov ebx, 16\nmov edx, 0\ndiv rbx\nimul rax, rax, 16\nsub rsp, rbx\nmov rax, rsp\nadd rax, 0\nmov concat, rax\nmov i, 0\nmov k, 0\n jmp debut{compteur-2}\ndebut{compteur}:\nmov eax, i\nmovsx rdx, eax\nmov rax, {e2}\nadd rax, rdx\nmovzx ecx, [rax]\nmov rdx, concat\nmov eax, i\ncdqe\nmov [rdx+rax], cl\nadd i, 1\nfin{compteur}:\ndebut{compteur-1}:\nmov eax, i\ncmp eax, {long1}\njl debut{compteur}\nadd k, 1\nfin{compteur-1}:\ndebut{compteur-2}:\nmov eax, k\ncmp eax, {e1}\njl debut{compteur-1}\nmov rax, concat\nmov rsp, rsi\nfin{compteur-2}: 
-                smuli{index}: lea rax, {e2}\nmov rdi, rax\ncall strlen\nimul eax, {e2}\nmovsx rdx, eax\nsub rdx, 1\nmov concat, rdx\nmovsx rdx, eax\nmov r8, rdx\nmov r9d, 0\nmovsx rdx, eax\nmov rcx, rdx\nmov ebx, 0\ncdqe\nmov edx, 16\nsub rdx, 1\nadd rax, rdx\nmov ebx, 16\nmov edx, 0\ndiv rbx\nimul rax, rax, 16\nsub rsp, rbx\nmov rax, rsp\nadd rax, 0\nmov concat, rax\nmov i, 0\nmov k, 0\n jmp debut{compteur-2}\ndebut{compteur}:\nmov eax, i\nmovsx rdx, eax\nmov rax, {e1}\nadd rax, rdx\nmovzx ecx, [rax]\nmov rdx, concat\nmov eax, i\ncdqe\nmov [rdx+rax], cl\nadd i, 1\nfin{compteur}:\ndebut{compteur-1}:\nmov eax, i\ncmp eax, {long2}\njl debut{compteur}\nadd k, 1\nfin{compteur-1}:\ndebut{compteur-2}:\nmov eax, k\ncmp eax, {e2}\njl debut{compteur-1}\nmov rax, concat\nmov rsp, rsi\nfin{compteur-2}:
+                imuls{index}: lea rax, {e1}\nmov rdi, rax\ncall strlen\nimul eax, {e2}\nmovsx rdx, eax\nsub rdx, 1\nmov concat, rdx\nmovsx rdx, eax\nmov r8, rdx\nmov r9d, 0\nmovsx rdx, eax\nmov rcx, rdx\nmov ebx, 0\ncdqe\nmov edx, 16\nsub rdx, 1\nadd rax, rdx\nmov ebx, 16\nmov edx, 0\ndiv rbx\nimul rax, rax, 16\nsub rsp, rbx\nmov rax, rsp\nadd rax, 0\nmov concat, rax\nmov i, 0\nmov k, 0\n jmp debut_imuls{index-3}\ndebut_imuls{index-1}:\nmov eax, i\nmovsx rdx, eax\nmov rax, {e2}\nadd rax, rdx\nmovzx ecx, [rax]\nmov rdx, concat\nmov eax, i\ncdqe\nmov [rdx+rax], cl\nadd i, 1\nfin_imuls{index-1}:\ndebut_imuls{index-2}:\nmov eax, i\ncmp eax, {long1}\njl debut_imuls{index-1}\nadd k, 1\nfin_imuls{index-2}:\ndebut_imuls{index-3}:\nmov eax, k\ncmp eax, {e1}\njl debut_imuls{index-2}\nmov rax, concat\nmov rsp, rsi\nfin_imuls{index-3}: 
+                smuli{index}: lea rax, {e2}\nmov rdi, rax\ncall strlen\nimul eax, {e2}\nmovsx rdx, eax\nsub rdx, 1\nmov concat, rdx\nmovsx rdx, eax\nmov r8, rdx\nmov r9d, 0\nmovsx rdx, eax\nmov rcx, rdx\nmov ebx, 0\ncdqe\nmov edx, 16\nsub rdx, 1\nadd rax, rdx\nmov ebx, 16\nmov edx, 0\ndiv rbx\nimul rax, rax, 16\nsub rsp, rbx\nmov rax, rsp\nadd rax, 0\nmov concat, rax\nmov i, 0\nmov k, 0\n jmp debut_smuli{index-3}\ndebut_smuli{index-1}:\nmov eax, i\nmovsx rdx, eax\nmov rax, {e1}\nadd rax, rdx\nmovzx ecx, [rax]\nmov rdx, concat\nmov eax, i\ncdqe\nmov [rdx+rax], cl\nadd i, 1\nfin_smuli{index-1}:\ndebut_smuli{index-2}:\nmov eax, i\ncmp eax, {long2}\njl debut_smuli{index-1}\nadd k, 1\nfin_smuli{index-2}:\ndebut_smuli{index-3}:\nmov eax, k\ncmp eax, {e2}\njl debut_smuli{index-2}\nmov rax, concat\nmov rsp, rsi\nfin_smuli{index-3}:
                 fin{index}"""
 
         elif expr.children[1] == "/":
@@ -240,25 +234,31 @@ def compile_expr(expr):
 
 def type_assign(expr,lhs):
     if expr.data == "variable":
-        return f"mov [{lhs}_type], [{expr.children[0].value}_type]"
+        return f"mov rcx, [{expr.children[0].value}_type]\nmov [{lhs}_type], rcx"
     elif expr.data == "nombre":
-        return f"mov [{lhs}_type], 0"
+        return f"mov rcx, 0\nmov [{lhs}_type], rcx"
     elif expr.data == "pointer":
-        return f"mov [{lhs}_type], 1"
-    elif expr.data =="string":
-        return f"mov [{lhs}_type], 2"
+        return f"mov rcx, 1\nmov [{lhs}_type], rcx"
+    elif expr.data =="chaine":
+        return f"mov rcx, 2\nmov [{lhs}_type], rcx"
     elif expr.data == "binexpr":
         t1 = type(expr.children[0])
         t2 = type(expr.children[2])
         if expr.children[1] == "+":
             if (t1=="2" or t2=="2"):
-                return f"mov [{lhs}_type], 2"
+                return f"mov rcx, 2\nmov [{lhs}_type], rcx"
             elif (t1=="1" or t2=="1"):
-                return f"mov [{lhs}_type], 1"
+                return f"mov rcx, 2\nmov [{lhs}_type], rcx"
             else :
-                return f"mov [{lhs}_type], 0"
+                return f"mov rcx, 0\nmov [{lhs}_type], rcx"
     elif expr.data == "parenexpr":
-        return type_assign(expr.chidlren[0])
+        return type_assign(expr.children[0])
+    elif expr.data == "len":
+        return f"mov rcx, 0\nmov [{lhs}_type], rcx"
+    elif expr.data == "isequal":
+        return f"mov rcx, 0\nmov [{lhs}_type], rcx"
+    elif expr.data == "charat":
+        return f"mov rcx, 2\nmov [{lhs}_type], rcx"
     else :
         raise Exception("Not implemented")
 
@@ -289,6 +289,33 @@ def compile_cmd(cmd):
         lhs= cmd.children[0].value
         rhs=compile_expr(cmd.children[1])
         return f"{rhs}\nmov [{lhs}],rax"
+    elif cmd.data == "setcharat":
+        v = cmd.children[0].value
+        e1 = cmd.children[1].children[0].value
+        e2 = cmd.children[2]
+        if type(e2) == "2":
+            e_str=''
+            len_str = 0
+            for i in e2.children[0].value:
+                if ord(i) != 34:
+                    e_str+=f"{ord(i)}"
+                    len_str+=1
+            if len_str== 1:
+                return f"mov rax, {e_str}\nmovzx [{v} - {e1}], rax\n"
+            else:
+                raise Exception ("Too long string")
+        else:
+            str_e2 =  str(e2.children[0].value)
+            e_str=''
+            len_str=0
+            for i in str_e2:
+                 if ord(i) != 34:
+                    e_str+=f"{ord(i)}"
+                    len_str+=1
+            if len_str == 1:
+                return f"mov rax, {e_str}\nmovzx [{v} - {e1}], rax\n"
+            else:
+                raise Exception ("Too long string")
     else :
         raise Exception("Not implemented")
 def compile_bloc(bloc):
@@ -310,7 +337,7 @@ def compile(prg):
         code = code.replace("INIT", compile_vars(prg.children[0]))
         return code
 
-prg = grammaire.parse("main(X) {X=20;X=X+12;return(X);}")
+prg = grammaire.parse("""main(X) {X = "abcdef"; X.setcharAt( 3 ,"b"); return(X);}""")
 print(compile(prg))
 def gamma_expr(expr):
     if expr.data == "nombre":
