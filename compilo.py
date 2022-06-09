@@ -203,9 +203,10 @@ def compile_expr(expr):
     elif expr.data=="parenexpr":
         return compile_expr(expr.children[0])
     elif expr.data=="pointer":
-        return f" push rbp\nmov rbp,rsp\nmov rax,QWORD [rbp-8]\nmov QWORD [rax],{expr.children[1].value}\npop rbp"
+        return f"\nmov rax,QWORD [rbp+8]\nmov QWORD [rax],{expr.children[1].value}\npop rbp"
+        #return f"\npush rbp\nmov rbp,rsp\nmov rax,QWORD [rbp+8]\nmov QWORD [rax],{expr.children[1].value}\npop rbp"
     elif expr.data=="adresse":
-        return f"push rbp\nmov rbp,rsp\nmov QWORD [rbp], {expr.children[0]}\nlea rax,[rbp]\nmov QWORD [rbp],rax\npop rbp"
+        return f"\npush rbp\nmov rbp,rsp\nmov QWORD [rbp], {expr.children[0]}\nlea rax,[rbp]\nmov QWORD [rbp],rax\npop rbp"
     elif expr.data=="malloc":
         return f"mov edi,{expr.children[0].value}\nextern malloc\ncall malloc"
     else:

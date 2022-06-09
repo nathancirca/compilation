@@ -27,6 +27,7 @@ mov [q],rax
 
 mov rax,20
 mov [var],rax
+
 push rbp
 mov rbp,rsp
 mov QWORD [rbp], var
@@ -34,6 +35,14 @@ lea rax,[rbp]
 mov QWORD [rbp],rax
 pop rbp
 mov [q],rax
+
+push rbp
+mov rbp,rsp
+mov QWORD [rbp], q
+lea rax,[rbp]
+mov QWORD [rbp],rax
+pop rbp
+mov [p],rax
 
 mov rax,[p]
 
