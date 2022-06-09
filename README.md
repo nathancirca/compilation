@@ -17,4 +17,5 @@ gcc -o main -no-pie -fno-pie demo.o<br>
 Pour les chaines de caractères, hormis la concaténation qui ne fonctionne pas dû entre autres au problème soulevé dans le typage, et la recherche de caractère dans un string qui n'est pas encore implantée, toutes les fonctionnalités sont compilables. Cependant elles ne sont pas encore exécutables, car créant toutes une erreur de segmentation de la mémoire lors de l'éxécution du programme compilé.  
 
 <h2>Typage python</h2>
-Le typage devrait être prêt à accueuillir les pointeurs et les chaines de caractères mais des erreurs persistent quand on utilise nasm à cause des labels, si bien qu'une addition d'entiers ne fonctionne pas. L'erreur est "label changed during code generation" et elle apparait lors de l'utilisation de nasm pour des dizaines de labels dans le cas de l'addition.
+Toutes les opérations entre les entiers, entre les pointeurs et entre les entiers et les pointeurs focntionnent.
+Les boucles ne semblent pas reconnaitre les commandes à l'intérieur de la condition.
