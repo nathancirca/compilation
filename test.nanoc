@@ -1,7 +1,10 @@
-main(X,Y) {
-    X=
-    while(X){
-        X=X-1;
-        Y=Y+1;
-    }
-    return(Y+1);}
+
+main()
+{
+    var=2;
+    var=var+3;
+    var=var*2;
+    var=var/2;
+    var=var-1;
+    return(var)
+}
