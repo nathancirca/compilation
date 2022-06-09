@@ -2,10 +2,21 @@ extern printf, atoi, itoa, len_concat
 global main
 section .data
 fmt: db "%d", 10, 0
+<<<<<<< HEAD
 X: dq 0
 X_type: dq 0
 Y: dq 0
 Y_type: dq 0
+=======
+w: dq 0
+w_type: dq 0
+var: dq 0
+var_type: dq 0
+a: dq 0
+a_type: dq 0
+q: dq 0
+q_type: dq 0
+>>>>>>> eac9d7ce1430c4b51092fcbbe38e1330d0adb3cf
 
 section .text
 main:
@@ -91,6 +102,7 @@ je tpnt33
 cmp rdx, 1
 je tpnt33
 mov rcx,0
+<<<<<<< HEAD
 mov [X_type], rcx
 jmp fin33
 tstr33: mov rcx,1
@@ -101,6 +113,18 @@ mov [X_type], rcx
 fin33:
 mov [X],rax
 mov rax, [X]
+=======
+mov [q_type], rcx
+mov [q],rax
+
+mov rax,QWORD [rbp-8]
+mov eax, [rax]
+mov  [rbp-12], eax
+mov rcx,1
+mov [w_type], rcx
+mov [w],rax
+mov rax, [q]
+>>>>>>> eac9d7ce1430c4b51092fcbbe38e1330d0adb3cf
 
   mov rdi, fmt
   mov rsi, rax
