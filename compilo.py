@@ -39,7 +39,7 @@ def pp_expr(expr):
         return f"len( {e} )"
     elif expr.data == "charat":
         v = expr.children[0].value
-        e = pp_expr(expr.hildren[1])
+        e = pp_expr(expr.children[1])
         return f"{v}.charAt({e})"
     elif expr.data == "isequal":
         e1 = pp_expr(expr.children[0])
@@ -70,7 +70,7 @@ def pp_cmd(cmd):
         v = cmd.children[0].value
         e1 = pp_expr(cmd.children[1])
         e2 = pp_expr(cmd.children[2])
-        return f"{v}.setcharAt( {e1} , {e2} )"
+        return f"{v}.setcharAt( {e1} , {e2} );"
     elif cmd.data=="pointer":
         lhs= cmd.children[0].value
         rhs=pp_expr(cmd.children[1])
@@ -195,10 +195,12 @@ def compile_expr(expr):
     elif expr.data == "nombre":
         return f"mov rax,{expr.children[0].value}"
     elif expr.data == "chaine":
-        e=''
-        for i in expr.children[0].value:
-            if ord(i) != 34:
-                e+=f"{ord(i)}"
+        e='0x'
+        strlen = len(expr.children[0].value)
+        for i in range(strlen-1):
+            if ord(expr.children[0].value[strlen-i-1]) != 34:
+                e+=f"{format(ord(expr.children[0].value[strlen-i-1]), '02x')}"
+        print(e)
         return f"mov rax, {e}"
     elif expr.data == "binexpr":
         exp1=expr.children[0]
@@ -254,7 +256,7 @@ def compile_expr(expr):
     elif expr.data == "charat":
         v = expr.children[0].value
         e = expr.children[1].children[0].value
-        return f"movsx rax, [{v} - {e}]\n"
+        return f"mov rax, [{v} - {e}]\n"
     elif expr.data=="pointer":
         #return f"\nmov rax,QWORD [rbp-8]\nmov QWORD [rax],{expr.children[1].value}\npop rbp"
         return f"\nmov rax,QWORD [rbp-8]\nmov eax, [rax]\nmov  [rbp-12], eax"

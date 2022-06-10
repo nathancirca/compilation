@@ -1,0 +1,6 @@
+main(X) {
+    X = "abcd";
+    Y = X.charAt( 2 );
+    X.setcharAt( 3 , Y );
+    return(X);
+}
