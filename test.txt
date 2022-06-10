@@ -1,8 +1,16 @@
-main(a)
+main(X)
 {   
+<<<<<<< HEAD
+    X=0;
+    if(X){
+        printf(12);
+    }
+    return(X);
+=======
     q=malloc(8);
     var=2;
     q=&var;
     w=*q;
     return(q);
+>>>>>>> eac9d7ce1430c4b51092fcbbe38e1330d0adb3cf
 }
