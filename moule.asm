@@ -1,4 +1,4 @@
-extern printf, atoi
+extern printf, atoi, strlen, itoa
 global main
 section .data
 fmt: db "%d", 10, 0
@@ -10,6 +10,11 @@ main:
   mov rbp, rsp
   push rdi
   push rsi
+  push r15
+  push r14
+  push r13
+  push r12
+
 
 VAR_INIT
 BODY
